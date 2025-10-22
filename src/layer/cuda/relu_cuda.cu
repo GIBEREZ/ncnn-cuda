@@ -1,5 +1,5 @@
 #include <cuda_runtime.h>
-#include <relu_cuda.h>
+#include "relu_cuda.h"
 
 /**
  * CUDA版本激活函数kernel() 和 CUDA版本激活函数kernel的CPP API接口
@@ -11,5 +11,5 @@
 __global__ void relu_kernel(const float* input_blob, float* output_blob, int number)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < N) y[idx] = x[idx] > 0.0f ? x[idx] : 0.0f;
+    if (idx < number) output_blob[idx] = input_blob[idx] > 0.0f ? input_blob[idx] : 0.0f;
 }

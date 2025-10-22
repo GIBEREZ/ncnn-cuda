@@ -283,7 +283,7 @@ if(NCNN_CUDA)
         else ()
             message(STATUS "Found CUDA ${CUDA_VERSION}")
             include_directories(${CUDA_INCLUDE_DIRS})
-            target_link_libraries(ncnn PUBLIC ${CUDA_LIBRARIES})
+            target_link_libraries(ncnn PRIVATE ${CUDA_LIBRARIES})
             target_compile_definitions(ncnn PUBLIC NCNN_CUDA=1)
 
             if (NCNN_CUDNN)
@@ -311,7 +311,7 @@ if(NCNN_CUDA)
                     target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=0)
                 else()
                     message(STATUS "cuDNN acceleration library retrieved.")
-                    target_link_libraries(ncnn PUBLIC cudnn)
+                    target_link_libraries(ncnn PRIVATE cudnn)
                     target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=1)
                 endif()
             endif()
@@ -330,7 +330,7 @@ if(NCNN_CUDA)
             message(STATUS "CMAKE_CUDA_COMPILER: ${CMAKE_CUDA_COMPILER}")
             message(STATUS "CMAKE_CUDA_HOST_COMPILER: ${CMAKE_CUDA_HOST_COMPILER}")
 
-            target_link_libraries(ncnn PUBLIC CUDA::cudart)
+            target_link_libraries(ncnn PRIVATE CUDA::cudart)
             target_compile_definitions(ncnn PUBLIC NCNN_CUDA=1)
 
             set_property(TARGET ncnn PROPERTY CUDA_ARCHITECTURES native)
@@ -349,7 +349,7 @@ if(NCNN_CUDA)
                     message(FATAL_ERROR "cuDNN not found in CUDA include paths.")
                     target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=0)
                 else()
-                    target_link_libraries(ncnn PUBLIC cudnn)
+                    target_link_libraries(ncnn PRIVATE cudnn)
                     target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=1)
                 endif()
             endif()
@@ -378,6 +378,40 @@ if(NCNN_CUDA)
             endif()
         endif()
     endif()
+
+    # 注册CUDA lib，并对所有相关的代码编译成lib
+    if(CUDA_FOUND OR CUDAToolkit_FOUND)
+        # 给所有 target 添加宏定义 NCNN_CUDA=1，告诉编译器启用 CUDA 相关代码
+        add_compile_definitions(NCNN_CUDA=1)
+        add_library(ncnn_cuda_lib STATIC ${ncnn_SRCS_CUDA})
+        set_target_properties(ncnn_cuda_lib PROPERTIES
+                # 启用 CUDA 可分离编译（Separable Compilation）
+                # 允许多个 .cu 文件分别编译成中间对象，再在链接阶段组合成库
+                # 对于包含多个 kernel 的大型项目非常重要
+                CUDA_SEPARABLE_COMPILATION ON
+                # 指定链接器使用 C++ 链接器，而不是默认 CUDA 链接器
+                # 保证生成的静态库或共享库能正确链接 C++ 依赖
+                LINKER_LANGUAGE CXX
+                # 指定目标 GPU 架构（SM 版本）
+                # sm_50、sm_60、sm_75、sm_80、sm_85 分别对应不同 NVIDIA GPU
+                # CMake 会为这些架构生成对应的 PTX/SASS 代码
+                CUDA_ARCHITECTURES 50 60 75 80 85
+        )
+        target_include_directories(ncnn_cuda_lib
+                PUBLIC
+                # 编译时头文件路径：当前源代码目录
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                # 安装后头文件路径：安装到 include/ncnn 下
+                $<INSTALL_INTERFACE:include/ncnn>
+                # 编译时头文件路径：当前二进制目录，通常存放生成的头文件
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+                PRIVATE
+                # 私有头文件路径，仅 ncnn_cuda_lib 自身使用，不会传递给依赖它的 target
+                $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/layer>
+        )
+
+        target_link_libraries(ncnn PRIVATE "ncnn_cuda_lib")
+    endif ()
 endif()
 
 
@@ -802,7 +836,7 @@ if(NCNN_TARGET_ARCH STREQUAL "riscv" AND NOT C906)
                 target_compile_options(ncnn PRIVATE -D__riscv_zvfh=1 -D__fp16=_Float16)
             endif()
         endif()
-        target_compile_options(ncnn PRIVATE ${RISCV_MARCH_FLAG})
+        target_compile_options(ncnn PRIVATE $ {RISCV_MARCH_FLAG})
     elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
         if(NOT NCNN_RUNTIME_CPU AND NCNN_RVV)
             set(RISCV_MARCH_FLAG "-march=rv32gcv")
@@ -849,6 +883,10 @@ endif()
 add_dependencies(ncnn ncnn-generate-spirv)
 
 if(NCNN_INSTALL_SDK)
+    if (NCNN_CUDA)
+        install(TARGETS ncnn_cuda_lib EXPORT ncnn_cuda_lib_targets ARCHIVE DESTINATION lib)
+    endif()
+
     include(GNUInstallDirs)
 
     include(CMakePackageConfigHelpers)
@@ -904,6 +942,14 @@ if(NCNN_INSTALL_SDK)
     # pkgconfig
     configure_file(ncnn.pc.in ${CMAKE_CURRENT_BINARY_DIR}/ncnn.pc @ONLY)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ncnn.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+    if (NCNN_CUDA)
+        install(FILES
+                DESTINATION include/ncnn
+        )
+        install(EXPORT ncnn_cuda_lib_targets
+                DESTINATION lib/cmake/ncnn)
+    endif ()
 endif()
 
 # add ncnn and generate-spirv to a virtual project group
