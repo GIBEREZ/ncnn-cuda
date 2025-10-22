@@ -21,6 +21,7 @@ namespace ncnn {
 
     int ReLU_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
-        relu_kernel<<<grid_size, block_size>>>(input_blob, output_blob);
+        relu_kernel_cuda(input_blob, output_blob, input_blob.total());
+        return 0;
     }
-}
+    } // namespace ncnn
