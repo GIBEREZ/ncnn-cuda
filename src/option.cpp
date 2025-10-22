@@ -18,6 +18,12 @@ Option::Option()
     blob_allocator = 0;
     workspace_allocator = 0;
 
+#if NCNN_CUDA
+    use_cuda = true;
+    use_cudnn = true;
+#endif
+
+
 #if NCNN_VULKAN
     blob_vkallocator = 0;
     workspace_vkallocator = 0;

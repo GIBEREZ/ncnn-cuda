@@ -98,6 +98,22 @@ int Layer::forward_inplace(Mat& /*bottom_top_blob*/, const Option& /*opt*/) cons
     return -1;
 }
 
+#if NCNN_CUDA
+int Layer::upload_model(const Option& _opt)
+{
+    return 0;
+}
+
+int Layer::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
+{
+    if (!support_inplace)
+        return -1;
+
+    return;
+}
+
+#endif
+
 #if NCNN_VULKAN
 int Layer::upload_model(VkTransfer& /*cmd*/, const Option& /*opt*/)
 {

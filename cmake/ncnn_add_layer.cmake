@@ -126,10 +126,31 @@ macro(ncnn_add_layer class)
         source_group ("sources\\\\layers\\\\${NCNN_TARGET_ARCH}" FILES "${CMAKE_CURRENT_SOURCE_DIR}/layer/${NCNN_TARGET_ARCH}/${name}_${NCNN_TARGET_ARCH}.cpp")
     endif()
 
+    if(NCNN_CUDA)
+        # 拼出文件路径
+        set(cuda_header "${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.h")
+        set(cuda_source "${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.cpp")
+
+        # 检查是否存在
+        if(EXISTS "${cuda_header}" AND EXISTS "${cuda_source}")
+            set(layer_declaration "${layer_declaration}#include \"layer/cuda/${name}_cuda.h\"\n")
+            set(layer_declaration "${layer_declaration}namespace ncnn { DEFINE_LAYER_CREATOR(${class}_cuda) }\n")
+
+            source_group("sources\\layers\\cuda" FILES "${cuda_source}")
+
+            # 向项目中添加src/layer/cuda/${name}.cpp文件
+            set(LAYER_CUDA_SRC ${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.cpp)
+            if(NCNN_CUDA AND EXISTS ${LAYER_CUDA_SRC})
+                message(STATUS "Detected CUDA layer for '${name}', registering ${name}_cuda.cpp/.h")
+                set(WITH_LAYER_${name}_cuda 1)
+                list(APPEND ncnn_SRCS ${LAYER_CUDA_SRC})
+            endif()
+        endif()
+    endif ()
+
     if(WITH_LAYER_${name}_vulkan)
         set(layer_declaration "${layer_declaration}#include \"layer/vulkan/${name}_vulkan.h\"\n")
         set(layer_declaration "${layer_declaration}namespace ncnn { DEFINE_LAYER_CREATOR(${class}_vulkan) }\n")
-
         file(GLOB NCNN_SHADER_SRCS "layer/vulkan/shader/${name}.comp")
         file(GLOB NCNN_SHADER_SUBSRCS "layer/vulkan/shader/${name}_*.comp")
         list(APPEND NCNN_SHADER_SRCS ${NCNN_SHADER_SUBSRCS})

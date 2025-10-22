@@ -512,6 +512,146 @@ void Mat::create_like(const Mat& m, Allocator* _allocator)
         create(m.w, m.h, m.d, m.c, m.elemsize, m.elempack, _allocator);
 }
 
+#if NCNN_CUDA
+
+CudaMat::CudaMat()
+{
+    init();
+}
+
+CudaMat::CudaMat(int w, size_t elemsize)
+{
+    create(w, elemsize);
+}
+
+CudaMat::CudaMat(int w, int h, size_t elemsize)
+{
+    create(w, h, elemsize);
+}
+
+CudaMat::CudaMat(int w, int h, int c, size_t elemsize)
+{
+    create(w, h, c, elemsize);
+}
+
+CudaMat::CudaMat(int w, int h, int d, int c, size_t elemsize)
+{
+    create(w, h, d, c, elemsize);
+}
+
+CudaMat::~CudaMat()
+{
+    release();
+}
+
+void CudaMat::init()
+{
+    data_gpu = nullptr;
+    elemsize = 0;
+    dims = 0;
+    w = h = d = c = 0;
+}
+
+void CudaMat::release()
+{
+    if (data_gpu)
+    {
+        cudaError_t err = cudaFree(data_gpu);
+        if (err != cudaSuccess)
+        {
+            fprintf(stderr, "CudaMat::release() cudaFree failed: %s\n", cudaGetErrorString(err));
+        }
+        data_gpu = nullptr;
+    }
+
+    elemsize = 0;
+    dims = 0;
+    w = h = d = c = 0;
+}
+
+void CudaMat::create(int w, size_t elemsize)
+{
+    release();
+    this->w = w;
+    this->h = this->d = this->c = 1;
+    this->elemsize = elemsize;
+    this->elempack = 1;
+    this->dims = 1;
+    cstep = alignSize(w * elemsize, 16) / elemsize;
+    size_t total_size = static_cast<size_t>(w) * elemsize;
+    cudaMalloc(reinterpret_cast<void**>(&data_gpu), total_size);
+}
+
+void CudaMat::create(int w, int h, size_t elemsize)
+{
+    release();
+    this->w = w;
+    this->h = h;
+    this->d = this->c = 1;
+    this->elemsize = elemsize;
+    this->elempack = 1;
+    this->dims = 2;
+    cstep = alignSize((size_t)w * h * elemsize, 16) / elemsize;
+    size_t total_size = static_cast<size_t>(w) * h * elemsize;
+    cudaMalloc(reinterpret_cast<void**>(&data_gpu), total_size);
+}
+
+void CudaMat::create(int w, int h, int c, size_t elemsize)
+{
+    release();
+    this->w = w;
+    this->h = h;
+    this->c = c;
+    this->d = 1;
+    this->elemsize = elemsize;
+    this->elempack = 1;
+    this->dims = 3;
+    cstep = alignSize((size_t)w * h * elemsize, 16) / elemsize;
+    size_t total_size = static_cast<size_t>(w) * h * c * elemsize;
+    cudaMalloc(reinterpret_cast<void**>(&data_gpu), total_size);
+}
+
+void CudaMat::create(int w, int h, int d, int c, size_t elemsize)
+{
+    release();
+    this->w = w;
+    this->h = h;
+    this->d = d;
+    this->c = c;
+    this->elemsize = elemsize;
+    this->elempack = 1;
+    this->dims = 4;
+    cstep = alignSize((size_t)w * h * d * elemsize, 16) / elemsize;
+    size_t total_size = static_cast<size_t>(w) * h * d * c * elemsize;
+    cudaMalloc(reinterpret_cast<void**>(&data_gpu), total_size);
+}
+
+void CudaMat::create_like(const Mat& m)
+{
+    if (m.dims == 1)
+        create(m.w, m.elemsize);
+    else if (m.dims == 2)
+        create(m.w, m.h, m.elemsize);
+    else if (m.dims == 3)
+        create(m.w, m.h, m.c, m.elemsize);
+    else if (m.dims == 4)
+        create(m.w, m.h, m.d, m.c, m.elemsize);
+}
+
+void CudaMat::create_like(const CudaMat& m)
+{
+    size_t total_size = static_cast<size_t>(m.d)*m.c*m.h*m.w*m.elemsize;
+}
+
+bool CudaMat::empty() const
+{
+    return data_gpu == 0 || total() == 0;
+}
+
+
+
+#endif
+
 #if NCNN_VULKAN
 void Mat::create_like(const VkMat& m, Allocator* _allocator)
 {

@@ -6,6 +6,10 @@
 
 #include "platform.h"
 
+#if NCNN_CUDA
+
+#endif
+
 #if NCNN_VULKAN
 
 #include "mat.h"

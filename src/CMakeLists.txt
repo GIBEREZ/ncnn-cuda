@@ -42,6 +42,7 @@ set(ncnn_SRCS
     simplestl.cpp
     simplemath.cpp
     simplevk.cpp
+    ../main.cpp
 )
 
 if(ANDROID)
@@ -267,6 +268,118 @@ if(NCNN_THREADS)
         target_link_libraries(ncnn PUBLIC pthread)
     endif()
 endif()
+
+if(NCNN_CUDA)
+    message(STATUS "=== Enabling CUDA support ===")
+
+    if (${CMAKE_VERSION} VERSION_LESS "3.18")
+
+        message(WARNING "Using old FindCUDA mode (CMake < 3.18). Consider upgrading for CUDAToolkit targets.")
+        find_package(CUDA REQUIRED)
+
+        if(NOT CUDA_FOUND)
+            message(FATAL_ERROR "CUDA not found. Please install CUDA and set CUDA_PATH environment variable.")
+            target_compile_definitions(ncnn PUBLIC NCNN_CUDA=0)
+        else ()
+            message(STATUS "Found CUDA ${CUDA_VERSION}")
+            include_directories(${CUDA_INCLUDE_DIRS})
+            target_link_libraries(ncnn PUBLIC ${CUDA_LIBRARIES})
+            target_compile_definitions(ncnn PUBLIC NCNN_CUDA=1)
+
+            if (NCNN_CUDNN)
+                set(CUDNN_HEADER_FOUND FALSE)
+                foreach(dir ${CUDA_INCLUDE_DIRS})
+                    if(EXISTS "${dir}/cudnn.h")
+                        set(CUDNN_HEADER_FOUND TRUE)
+                        break()
+                    endif()
+                endforeach()
+
+                set(CUDNN_LIB_FOUND FALSE)
+                foreach(dir ${CUDA_LIBRARY_DIRS})
+                    if(EXISTS "${dir}/cudnn.lib" OR EXISTS "${dir}/libcudnn.so" OR EXISTS "${dir}/libcudnn.dylib")
+                        set(CUDNN_LIB_FOUND TRUE)
+                        break()
+                    endif()
+                endforeach()
+
+                message(STATUS "CUDNN_HEADER: ${CUDNN_HEADER_FOUND}")
+                message(STATUS "CUDNN_LIB_FOUND: ${CUDNN_LIB_FOUND}")
+
+                if(NOT CUDNN_HEADER_FOUND OR NOT CUDNN_LIB_FOUND)
+                    message(FATAL_ERROR "cuDNN not found in CUDA include/lib directories. Please install cuDNN or set NCNN_CUDNN_PATH.")
+                    target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=0)
+                else()
+                    message(STATUS "cuDNN acceleration library retrieved.")
+                    target_link_libraries(ncnn PUBLIC cudnn)
+                    target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=1)
+                endif()
+            endif()
+        endif()
+    else()
+        enable_language(CUDA)
+        find_package(CUDAToolkit REQUIRED)
+
+        if(NOT CUDAToolkit_FOUND)
+            message(FATAL_ERROR "CUDAToolkit not found. Please install CUDA and set CUDA_PATH environment variable.")
+            target_compile_definitions(ncnn PUBLIC NCNN_CUDA=0)
+        else ()
+            message(STATUS "Found CUDA ${CUDAToolkit_VERSION}")
+            message(STATUS "CUDAToolkit_INCLUDE_DIRS: ${CUDAToolkit_INCLUDE_DIRS}")
+
+            message(STATUS "CMAKE_CUDA_COMPILER: ${CMAKE_CUDA_COMPILER}")
+            message(STATUS "CMAKE_CUDA_HOST_COMPILER: ${CMAKE_CUDA_HOST_COMPILER}")
+
+            target_link_libraries(ncnn PUBLIC CUDA::cudart)
+            target_compile_definitions(ncnn PUBLIC NCNN_CUDA=1)
+
+            set_property(TARGET ncnn PROPERTY CUDA_ARCHITECTURES native)
+            set_target_properties(ncnn PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
+            if (NCNN_CUDNN)
+                set(CUDNN_HEADER_FOUND FALSE)
+                foreach(dir ${CUDAToolkit_INCLUDE_DIRS})
+                    if(EXISTS "${dir}/cudnn.h")
+                        set(CUDNN_HEADER_FOUND TRUE)
+                        break()
+                    endif()
+                endforeach()
+
+                if(NOT CUDNN_HEADER_FOUND)
+                    message(FATAL_ERROR "cuDNN not found in CUDA include paths.")
+                    target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=0)
+                else()
+                    target_link_libraries(ncnn PUBLIC cudnn)
+                    target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=1)
+                endif()
+            endif()
+
+            include(CheckLanguage)
+            check_language(CUDA)
+            if(CMAKE_CUDA_COMPILER)
+                include(CheckCXXSourceCompiles)
+                set(CMAKE_REQUIRED_FLAGS ${CMAKE_CUDA_FLAGS})
+                set(CMAKE_REQUIRED_LIBRARIES CUDA::cudart)
+
+                check_cxx_source_compiles("
+                    #include <cuda_runtime.h>
+                    int main() {
+                        int deviceCount = 0;
+                        return cudaGetDeviceCount(&deviceCount);
+                    }" CUDA_COMPILES)
+
+                if(CUDA_COMPILES)
+                    message(STATUS "CUDA runtime successfully compiled and linked.")
+                else()
+                    message(FATAL_ERROR "CUDA headers found, but failed to compile/link test program.")
+                endif()
+            else()
+                message(FATAL_ERROR "No CUDA compiler detected (nvcc not found).")
+            endif()
+        endif()
+    endif()
+endif()
+
 
 if(NCNN_VULKAN)
     if(NCNN_SIMPLEVK)
