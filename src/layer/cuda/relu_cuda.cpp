@@ -4,6 +4,9 @@
 
 #include "Relu_cuda.h"
 
+#include <iostream>
+#include <ostream>
+
 namespace ncnn {
     ReLU_cuda::ReLU_cuda()
     {
@@ -21,7 +24,7 @@ namespace ncnn {
 
     int ReLU_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
-        relu_kernel_cuda(input_blob, output_blob, input_blob.total());
+        relu_cuda(input_blob, output_blob, input_blob.total());
         return 0;
     }
-    } // namespace ncnn
+} // namespace ncnn

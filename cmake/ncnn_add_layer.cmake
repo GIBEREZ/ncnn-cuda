@@ -127,31 +127,38 @@ macro(ncnn_add_layer class)
     endif()
 
     if(NCNN_CUDA)
+        enable_language(CUDA)
         # 拼出文件路径
         set(cuda_header "${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.h")
         set(cuda_source "${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.cpp")
         set(cuda_cu     "${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.cu")
 
-        # 检查头文件和 cpp 是否存在
-        if(EXISTS "${cuda_header}" AND EXISTS "${cuda_source}")
+        # 检查头文件和cu文件是否存在
+        if(EXISTS "${cuda_header}" AND EXISTS "${cuda_cu}")
             # 添加声明
             string(APPEND layer_declaration "#include \"layer/cuda/${name}_cuda.h\"\n")
             string(APPEND layer_declaration "namespace ncnn { DEFINE_LAYER_CREATOR(${class}_cuda) }\n")
 
-            # 分组显示在 IDE
-            source_group("sources\\layers\\cuda" FILES "${cuda_source}")
+            # 分组显示在IDE
+            source_group("sources\\layers\\cuda" FILES "${cuda_cu}")
 
             # 添加 cpp 文件
             message(STATUS "Detected CUDA layer for '${name}', registering ${name}_cuda.cpp/.h")
             list(APPEND ncnn_SRCS "${cuda_source}")
             set(WITH_LAYER_${name}_cuda 1)
-        endif()
 
-        # 检查 cu 文件是否存在
-        if(EXISTS "${cuda_cu}")
-            message(STATUS "Detected CUDA kernel for '${name}', registering ${name}_cuda.cu")
+            # 添加cu文件并设置为CUDA语言
+            message(STATUS "Detected CUDA layer for '${name}', registering ${name}_cuda.cu/.h")
             list(APPEND ncnn_SRCS_CUDA "${cuda_cu}")
-            set(WITH_LAYER_${name}_cu 1)
+            set(WITH_LAYER_${name}_cuda 1)
+
+            # 设置CUDA语言属性
+            set_source_files_properties("${cuda_cu}" PROPERTIES LANGUAGE CUDA)
+        else()
+            # 如果只有头文件和.cpp文件，但没有.cu文件，给出警告
+            if(EXISTS "${cuda_header}" AND NOT EXISTS "${cuda_cu}")
+                message(WARNING "Found ${name}_cuda.h but no ${name}_cuda.cu - CUDA layer may not work properly")
+            endif()
         endif()
     endif()
 

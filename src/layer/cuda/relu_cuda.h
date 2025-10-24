@@ -5,10 +5,9 @@
 #ifndef NCNN_RELU_CUDA_H
 #define NCNN_RELU_CUDA_H
 #include "layer.h"
-#include <cuda_runtime.h>
 
 namespace ncnn {
-extern "C" void relu_kernel_cuda(const float* input_blob, float* output_blob, int number);
+void relu_cuda(const float* input_blob, float* output_blob, int number);
     class ReLU_cuda : public Layer
     {
     public:

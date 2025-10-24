@@ -3,8 +3,9 @@
 //
 
 #include "Convolution_cuda.h"
+
 namespace ncnn {
-    int Convolution_Cuda::upload_model(const Option& opt)
+    int Convolution_cuda::upload_model(const Option& opt)
     {
         Option option = opt;
         size_t weight_size = this->weight_data.total() * weight_data.elemsize;
@@ -17,7 +18,7 @@ namespace ncnn {
         }
         return 0;
     }
-    int Convolution_Cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
+    int Convolution_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
         Option option = opt;
         int c = input_blob.c;                   // 输入通道数

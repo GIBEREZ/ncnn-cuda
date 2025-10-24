@@ -12,7 +12,7 @@ namespace ncnn{
 
     int Padding_cuda::upload_model(const Option& opt)
     {
-
+        return 0;
     }
 
     int Padding_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
@@ -29,9 +29,10 @@ namespace ncnn{
 
         if (input_blob.dims == 2)
         {
-            outw = w + pad_left + pad_right;
-            outh = h * elempack + pad_top + pad_bottom;
+            //outw = w + pad_left + pad_right;
+            //outh = h * elempack + pad_top + pad_bottom;
         }
+        return 0;
     }
 
 }

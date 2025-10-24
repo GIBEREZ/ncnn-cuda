@@ -4,10 +4,8 @@
 
 #ifndef NCNN_CONV_CUDA_H
 #define NCNN_CONV_CUDA_H
-#include "convolution.h"
-
 // CUDA
-#include <cuda_runtime.h>
+#include "layer.h"
 
 namespace ncnn {
     class Convolution_cuda : public Layer

@@ -109,7 +109,7 @@ int Layer::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option
     if (!support_inplace)
         return -1;
 
-    return;
+    return 0;
 }
 
 #endif

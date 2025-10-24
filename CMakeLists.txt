@@ -76,7 +76,7 @@ option(NCNN_PIXEL_ROTATE "rotate image pixel orientation" ON)
 option(NCNN_PIXEL_AFFINE "warp affine image pixel" ON)
 option(NCNN_PIXEL_DRAWING "draw basic figure and text" ON)
 option(NCNN_CMAKE_VERBOSE "print verbose cmake messages" OFF)
-option(NCNN_VULKAN "vulkan compute support" ON)
+option(NCNN_VULKAN "vulkan compute support" OFF)
 option(NCNN_SIMPLEVK "minimal in-house vulkan loader" ON)
 option(NCNN_SYSTEM_GLSLANG "use system glslang library" OFF)
 option(NCNN_RUNTIME_CPU "runtime dispatch cpu routines" ON)
@@ -799,6 +799,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
     endif()
 endif()
 
+if(NCNN_CUDA)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+endif()
+
 if(NCNN_VULKAN)
     if(NCNN_SYSTEM_GLSLANG)
         find_package(Threads)
@@ -890,3 +898,13 @@ endif()
 if(NCNN_PYTHON)
     add_subdirectory(python)
 endif()
+
+# ===== 添加你的 main.cpp 可执行文件 =====
+add_executable(ncnn_test main.cpp)
+# 链接 ncnn 库（CUDA 支持版本）
+target_link_libraries(ncnn_test PRIVATE ncnn ncnn_cuda_lib)
+
+# 包含头文件目录（ncnn 的头文件路径）
+target_include_directories(ncnn_test PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+)

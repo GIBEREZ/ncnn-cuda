@@ -283,7 +283,7 @@ if(NCNN_CUDA)
         else ()
             message(STATUS "Found CUDA ${CUDA_VERSION}")
             include_directories(${CUDA_INCLUDE_DIRS})
-            target_link_libraries(ncnn PRIVATE ${CUDA_LIBRARIES})
+            target_link_libraries(ncnn PUBLIC ${CUDA_LIBRARIES})
             target_compile_definitions(ncnn PUBLIC NCNN_CUDA=1)
 
             if (NCNN_CUDNN)
@@ -311,7 +311,7 @@ if(NCNN_CUDA)
                     target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=0)
                 else()
                     message(STATUS "cuDNN acceleration library retrieved.")
-                    target_link_libraries(ncnn PRIVATE cudnn)
+                    target_link_libraries(ncnn PUBLIC cudnn)
                     target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=1)
                 endif()
             endif()
@@ -330,7 +330,7 @@ if(NCNN_CUDA)
             message(STATUS "CMAKE_CUDA_COMPILER: ${CMAKE_CUDA_COMPILER}")
             message(STATUS "CMAKE_CUDA_HOST_COMPILER: ${CMAKE_CUDA_HOST_COMPILER}")
 
-            target_link_libraries(ncnn PRIVATE CUDA::cudart)
+            target_link_libraries(ncnn PUBLIC CUDA::cudart CUDA::cublas)
             target_compile_definitions(ncnn PUBLIC NCNN_CUDA=1)
 
             set_property(TARGET ncnn PROPERTY CUDA_ARCHITECTURES native)
@@ -338,6 +338,7 @@ if(NCNN_CUDA)
 
             if (NCNN_CUDNN)
                 set(CUDNN_HEADER_FOUND FALSE)
+                set(CUDNN_LIB_FOUND FALSE)
                 foreach(dir ${CUDAToolkit_INCLUDE_DIRS})
                     if(EXISTS "${dir}/cudnn.h")
                         set(CUDNN_HEADER_FOUND TRUE)
@@ -345,11 +346,21 @@ if(NCNN_CUDA)
                     endif()
                 endforeach()
 
-                if(NOT CUDNN_HEADER_FOUND)
-                    message(FATAL_ERROR "cuDNN not found in CUDA include paths.")
+                find_library(CUDNN_LIBRARY cudnn
+                        PATHS ${CUDAToolkit_LIBRARY_DIR}
+                        DOC "cuDNN library"
+                )
+
+                if(CUDNN_LIBRARY)
+                    set(CUDNN_LIB_FOUND TRUE)
+                endif()
+
+                if(NOT CUDNN_HEADER_FOUND OR NOT CUDNN_LIB_FOUND)
+                    message(WARNING "cuDNN not found. Disabling cuDNN support.")
                     target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=0)
                 else()
-                    target_link_libraries(ncnn PRIVATE cudnn)
+                    message(STATUS "Found cuDNN: ${CUDNN_LIBRARY}")
+                    target_link_libraries(ncnn PUBLIC ${CUDNN_LIBRARY})
                     target_compile_definitions(ncnn PUBLIC NCNN_NCNN_CUDNN=1)
                 endif()
             endif()
@@ -389,7 +400,7 @@ if(NCNN_CUDA)
                 # 允许多个 .cu 文件分别编译成中间对象，再在链接阶段组合成库
                 # 对于包含多个 kernel 的大型项目非常重要
                 CUDA_SEPARABLE_COMPILATION ON
-                # 指定链接器使用 C++ 链接器，而不是默认 CUDA 链接器
+                # 指定链接器使用默认 CUDA 链接器
                 # 保证生成的静态库或共享库能正确链接 C++ 依赖
                 LINKER_LANGUAGE CXX
                 # 指定目标 GPU 架构（SM 版本）
@@ -409,8 +420,15 @@ if(NCNN_CUDA)
                 # 私有头文件路径，仅 ncnn_cuda_lib 自身使用，不会传递给依赖它的 target
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/layer>
         )
+        set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+        # 公开 CUDA 头文件路径给所有使用 ncnn 的目标
+        if (DEFINED CUDAToolkit_INCLUDE_DIRS)
+            target_include_directories(ncnn PUBLIC ${CUDAToolkit_INCLUDE_DIRS})
+        elseif (DEFINED CUDA_INCLUDE_DIRS)
+            target_include_directories(ncnn PUBLIC ${CUDA_INCLUDE_DIRS})
+        endif()
 
-        target_link_libraries(ncnn PRIVATE "ncnn_cuda_lib")
+        target_link_libraries(ncnn PUBLIC "ncnn_cuda_lib")
     endif ()
 endif()
 
