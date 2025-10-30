@@ -10,7 +10,7 @@ namespace ncnn {
 ReLU_vulkan::ReLU_vulkan()
 {
     support_vulkan = true;
-
+-
     pipeline_relu = 0;
 }
 

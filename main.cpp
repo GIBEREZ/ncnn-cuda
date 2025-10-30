@@ -18,14 +18,8 @@ int main() {
     output.create(input.w, input.h, input.c, sizeof(float)); // 分配 GPU 内存
     // 前向传播
     relu_layer.forward(input, output, ncnn::Option());
+    output.download(output);
     std::vector<float> host_output(output.total());
-    // 打印输出的一部分
-    std::cout << "Output Tensor Info: " << output.w << " x " << output.h << " x " << output.c << std::endl;
-    std::cout << "First 5 values in the output tensor: ";
-    for (int i = 0; i < 5; i++) {
-        std::cout << output.data_gpu[i] << " ";
-    }
-    std::cout << std::endl;
 
     // 清理资源
     input.release();

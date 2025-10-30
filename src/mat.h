@@ -355,27 +355,29 @@ public:
     ~CudaMat();
     void release();
     // tensors with 1-4 dimensions Copy to NVIDIA
-    void create(int w, size_t _elemsize);
-    void create(int w, int h, size_t _elemsize);
-    void create(int w, int h, int c, size_t _elemsize);
-    void create(int w, int h, int d, int c, size_t _elemsize);
+    void create(int w, size_t elemsize);
+    void create(int w, int h, size_t elemsize);
+    void create(int w, int h, int c, size_t elemsize);
+    void create(int w, int h, int d, int c, size_t elemsize);
     // Input a tensor and output a tensor of the same shape to GPU memory
     void create_like(const Mat& m);
     void create_like(const CudaMat& m);
 
     bool empty() const;
+    void download(CudaMat& cpu_mat) const;
 
     // Precision selection 4=float32/int32; 2 = float16; 1 = int8/uint8; 0 = empty
     size_t elemsize;
     // Data pointer in NVIDIA CUDA
-    float* data_gpu = nullptr;
-    int w;          // 宽度
-    int h;          // 高度
-    int d;          // 深度
-    int c;          // 通道
-    int dims;       // 维度
-    size_t cstep;   // 元素数，在C通道通常需要对齐
-    int elempack;   // 表示一个 通道/元素 的打包数量
+    int w;              // 宽度
+    int h;              // 高度
+    int d;              // 深度
+    int c;              // 通道
+    int dims;           // 维度
+    size_t cstep;       // 在C通道对齐
+    size_t alloc_bytes; // 分配字节
+    int elempack;       // 表示一个 通道/元素 的打包数量
+    int Memory_Location;// 当前内存所在位置
 };
 #endif
 

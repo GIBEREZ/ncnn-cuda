@@ -144,9 +144,11 @@ public:
     bool use_reserved_10;
     bool use_reserved_11;
 
+#if NCNN_CUDA
     // enable NVIDIA CUDA+CUDNN inference
     bool use_cuda;
     bool use_cudnn;
+#endif
 };
 
 } // namespace ncnn

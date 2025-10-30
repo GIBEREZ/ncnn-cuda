@@ -546,7 +546,7 @@ CudaMat::~CudaMat()
 
 void CudaMat::init()
 {
-    data_gpu = nullptr;
+    data = nullptr;
     elemsize = 0;
     dims = 0;
     w = h = d = c = 0;
@@ -554,14 +554,14 @@ void CudaMat::init()
 
 void CudaMat::release()
 {
-    if (data_gpu)
+    if (data)
     {
-        cudaError_t err = cudaFree(data_gpu);
+        cudaError_t err = cudaFree(data);
         if (err != cudaSuccess)
         {
             fprintf(stderr, "CudaMat::release() cudaFree failed: %s\n", cudaGetErrorString(err));
         }
-        data_gpu = nullptr;
+        data = nullptr;
     }
 
     elemsize = 0;
@@ -577,9 +577,9 @@ void CudaMat::create(int w, size_t elemsize)
     this->elemsize = elemsize;
     this->elempack = 1;
     this->dims = 1;
-    cstep = alignSize(w * elemsize, 16) / elemsize;
-    size_t total_size = static_cast<size_t>(w) * elemsize;
-    cudaMalloc(reinterpret_cast<void**>(&data_gpu), total_size);
+    cstep = alignSize((size_t)w * h * elemsize, 16) / elemsize;
+    alloc_bytes = cstep * alignSize(c, 16) * elemsize;
+    cudaMalloc(&data, alloc_bytes);
 }
 
 void CudaMat::create(int w, int h, size_t elemsize)
@@ -592,8 +592,8 @@ void CudaMat::create(int w, int h, size_t elemsize)
     this->elempack = 1;
     this->dims = 2;
     cstep = alignSize((size_t)w * h * elemsize, 16) / elemsize;
-    size_t total_size = static_cast<size_t>(w) * h * elemsize;
-    cudaMalloc(reinterpret_cast<void**>(&data_gpu), total_size);
+    alloc_bytes = cstep * alignSize(c, 16) * elemsize;
+    cudaMalloc(&data, alloc_bytes);
 }
 
 void CudaMat::create(int w, int h, int c, size_t elemsize)
@@ -607,8 +607,8 @@ void CudaMat::create(int w, int h, int c, size_t elemsize)
     this->elempack = 1;
     this->dims = 3;
     cstep = alignSize((size_t)w * h * elemsize, 16) / elemsize;
-    size_t total_size = static_cast<size_t>(w) * h * c * elemsize;
-    cudaMalloc(reinterpret_cast<void**>(&data_gpu), total_size);
+    alloc_bytes = cstep * alignSize(c, 16) * elemsize;
+    cudaMalloc(&data, alloc_bytes);
 }
 
 void CudaMat::create(int w, int h, int d, int c, size_t elemsize)
@@ -621,9 +621,9 @@ void CudaMat::create(int w, int h, int d, int c, size_t elemsize)
     this->elemsize = elemsize;
     this->elempack = 1;
     this->dims = 4;
-    cstep = alignSize((size_t)w * h * d * elemsize, 16) / elemsize;
-    size_t total_size = static_cast<size_t>(w) * h * d * c * elemsize;
-    cudaMalloc(reinterpret_cast<void**>(&data_gpu), total_size);
+    cstep = alignSize((size_t)w * h * elemsize, 16) / elemsize;
+    alloc_bytes = cstep * alignSize(c, 16) * elemsize;
+    cudaMalloc(&data, alloc_bytes);
 }
 
 void CudaMat::create_like(const Mat& m)
@@ -640,12 +640,20 @@ void CudaMat::create_like(const Mat& m)
 
 void CudaMat::create_like(const CudaMat& m)
 {
-    size_t total_size = static_cast<size_t>(m.d)*m.c*m.h*m.w*m.elemsize;
+
 }
 
 bool CudaMat::empty() const
 {
-    return data_gpu == 0 || total() == 0;
+    return data == 0 || total() == 0;
+}
+
+void CudaMat::download(CudaMat& cpu_mat) const
+{
+    // 1. 执行 GPU → CPU 拷贝
+    cudaMemcpy(cpu_mat.data, data, total() * elemsize, cudaMemcpyDeviceToHost);
+    // 2. （可选）同步，确保 GPU 操作完成
+    cudaDeviceSynchronize();
 }
 
 

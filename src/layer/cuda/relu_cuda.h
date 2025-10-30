@@ -12,11 +12,14 @@ void relu_cuda(const float* input_blob, float* output_blob, int number);
     {
     public:
         ReLU_cuda();
-        virtual int load_param(const ParamDict& pd);
-        virtual int upload_model(const Option& opt);
-        virtual int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
-    };
-}
+        int load_param(const ParamDict& pd) override;
+        int upload_model(const Option& opt) override;
+        int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const override;
 
+        // 负斜率参数
+        float slope;
+    };
+
+}
 
 #endif //NCNN_RELU_CUDA_H

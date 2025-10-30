@@ -210,6 +210,13 @@ public:
     // type = 1, do not convert fp16/bf16 or / and packing
     int extract(int blob_index, Mat& feat, int type = 0);
 
+#if NCNN_CUDA
+    // 把一张已经在GPU中的数据，绑定到模型的输入blob上
+    int input(const char* blob_name, const CudaMat& input_blob);
+    // 从模型的输出blob中，提取结果到GPU（CudaMat）中
+    int extract(const char* blob_name, CudaMat& feat);
+#endif
+
 #if NCNN_VULKAN
 #if NCNN_STRING
     // set input by blob name

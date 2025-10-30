@@ -10,10 +10,14 @@
 namespace ncnn {
     ReLU_cuda::ReLU_cuda()
     {
-
+        // 是否该层只处理单个输入blob（张量）
+        one_blob_only = true;
+        // 是否支持原地计算
+        support_inplace = true;
     }
     int ReLU_cuda::load_param(const ParamDict& pd)
     {
+        slope = pd.get(0, 0.f);
         return 0;
     }
 

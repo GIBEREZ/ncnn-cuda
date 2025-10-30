@@ -2250,8 +2250,12 @@ int Extractor::extract(int blob_index, Mat& feat, int type)
             }
         }
 
-#if NCNN_VULKAN
-        if (d->opt.use_vulkan_compute)
+#if NCNN_VULKAN || NCNN_CUDA
+        if (d->opt.use_cuda)
+        {
+
+        }
+        else if (d->opt.use_vulkan_compute)
         {
             // use local allocator
             if (!d->opt.blob_vkallocator)
@@ -2398,6 +2402,43 @@ int Extractor::extract(int blob_index, Mat& feat, int type)
 
     return ret;
 }
+
+#if NCNN_CUDA
+int Extractor::input(const char* blob_name, const CudaMat& input_blob)
+{
+    int blob_index = d->net->find_blob_index_by_name(blob_name);
+    if (blob_index == -1)
+    {
+        NCNN_LOGE("Try");
+        const std::vector<const char*>& input_names = d->net->input_names();
+        for (size_t i = 0; i < input_names.size(); i++)
+        {
+            NCNN_LOGE("    ex.input(\"%s\", in%d);", input_names[i], (int)i);
+        }
+
+        return -1;
+    }
+
+    return input(blob_index, input_blob);
+}
+
+int Extractor::extract(const char* blob_name, CudaMat& feat)
+{
+    int blob_index = d->net->find_blob_index_by_name(blob_name);
+    if (blob_index == -1)
+    {
+        NCNN_LOGE("Try");
+        const std::vector<const char*>& output_names = d->net->output_names();
+        for (size_t i = 0; i < output_names.size(); i++)
+        {
+            NCNN_LOGE("    ex.extract(\"%s\", out%d);", output_names[i], (int)i);
+        }
+
+        return -1;
+    }
+    return extract(blob_index, feat);
+}
+#endif
 
 #if NCNN_VULKAN
 #if NCNN_STRING
