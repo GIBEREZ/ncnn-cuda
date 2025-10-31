@@ -1,4 +1,4 @@
-// Copyright 2021 Tencent
+// Copyright 2025 Tencent
 // SPDX-License-Identifier: BSD-3-Clause
 
 #include "pass_ncnn.h"
@@ -7,7 +7,7 @@ namespace pnnx {
 
 namespace ncnn {
 
-class Tensor_view : public GraphRewriterPass
+class Tensor_unflatten : public GraphRewriterPass
 {
 public:
     const char* match_pattern_graph() const
@@ -15,7 +15,7 @@ public:
         return R"PNNXIR(7767517
 3 2
 pnnx.Input              input       0 1 input
-Tensor.view             op_0        1 1 input out shape=%shape
+Tensor.unflatten         op_0        1 1 input out dim=%dim sizes=%sizes
 pnnx.Output             output      1 0 out
 )PNNXIR";
     }
@@ -27,19 +27,33 @@ pnnx.Output             output      1 0 out
 
     const char* name_str() const
     {
-        return "view";
+        return "unflatten";
     }
 
     void write(Operator* op, const std::map<std::string, Parameter>& captured_params) const
     {
-        const std::vector<int>& shape = captured_params.at("shape").ai;
+        int dim = captured_params.at("dim").i;
+        std::vector<int> sizes = captured_params.at("sizes").ai;
+
+        const int input_rank = op->inputs[0]->shape.size();
+
+        if (dim < 0)
+            dim += input_rank;
+
+        if (input_rank <= dim)
+        {
+            fprintf(stderr, "unflatten %d not possible for %d-rank tensor\n", dim, input_rank);
+            return;
+        }
+
+        const std::vector<int> shape = op->outputs[0]->shape;
 
         const int batch_index = op->outputs[0]->params["__batch_index"].i;
 
         if (batch_index != 0 && batch_index != 233)
         {
             if (op->outputs[0]->shape.empty() || op->outputs[0]->shape[batch_index] != 1)
-                fprintf(stderr, "reshape tensor with batch index %d is not supported yet!\n", batch_index);
+                fprintf(stderr, "unflatten tensor to batch index %d is not supported yet!\n", batch_index);
         }
 
         // drop shape batch index
@@ -94,7 +108,7 @@ pnnx.Output             output      1 0 out
     }
 };
 
-REGISTER_GLOBAL_PNNX_NCNN_GRAPH_REWRITER_PASS(Tensor_view, 20)
+REGISTER_GLOBAL_PNNX_NCNN_GRAPH_REWRITER_PASS(Tensor_unflatten, 20)
 
 } // namespace ncnn
 
