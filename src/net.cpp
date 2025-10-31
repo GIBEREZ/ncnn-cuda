@@ -2250,12 +2250,15 @@ int Extractor::extract(int blob_index, Mat& feat, int type)
             }
         }
 
-#if NCNN_VULKAN || NCNN_CUDA
+#if NCNN_CUDA
         if (d->opt.use_cuda)
         {
 
         }
-        else if (d->opt.use_vulkan_compute)
+#endif
+
+#if NCNN_VULKAN
+        if (d->opt.use_vulkan_compute)
         {
             // use local allocator
             if (!d->opt.blob_vkallocator)

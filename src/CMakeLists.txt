@@ -394,6 +394,7 @@ if(NCNN_CUDA)
     if(CUDA_FOUND OR CUDAToolkit_FOUND)
         # 给所有 target 添加宏定义 NCNN_CUDA=1，告诉编译器启用 CUDA 相关代码
         add_compile_definitions(NCNN_CUDA=1)
+        list(APPEND ncnn_SRCS_CUDA "command.cu")
         add_library(ncnn_cuda_lib STATIC ${ncnn_SRCS_CUDA})
         set_target_properties(ncnn_cuda_lib PROPERTIES
                 # 启用 CUDA 可分离编译（Separable Compilation）

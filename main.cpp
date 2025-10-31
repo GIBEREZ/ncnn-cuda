@@ -6,9 +6,12 @@
 #include <vector>
 #include "net.h"
 #include <cuda_runtime_api.h>
+#include <command.h>
 #include "layer/cuda/Relu_cuda.h"
 
 int main() {
+    ncnn::get_device_properties();
+
     // 创建输入和输出的 CudaMat
     ncnn::CudaMat input, output;
     input.create(640, 640, 3, sizeof(float));  // 640x640 输入，3 个通道

@@ -11,18 +11,22 @@
 #include "mat.h"
 
 namespace ncnn {
+    // C++17引入的标准，要求拿到函数返回值必须进行使用
+    [[nodiscard]] std::vector<cudaDeviceProp> get_device_properties();
+
     // 该类不需要添加NCNN_EXPORT宏定义，因为CUDA库已被单独编译成lib
     class CudaCompute
     {
     public:
-        // 防止编译器自动调用构造函数进行“类型转换”，要求必须“显式调用”。
-        explicit CudaCompute();
+        // 防止编译器自动调用构造函数进行“类型转换”，要求必须“显式调用”。需要传递要使用的N卡设备索引
+        explicit CudaCompute(int DeviceIndex);
         virtual ~CudaCompute();
-    public:
         void Upload_Device(const Mat& src, CudaMat& dst, const Option& option);    // 将CPU端Mat数据上传到GPU设备端CudaMat
         void Download_Device(const CudaMat& src, Mat& dst, const Option& option);  // 将GPU设备端CudaMat数据下载回CPU端Mat
-        void Clone_Device(const Mat& src, CudaMat& dst, const Option& option);     // 从CPU端Mat克隆生成GPU端CudaMat
-        void Clone_Device(const CudaMat& src, Mat& dst, const Option& option);     // 从GPU端CudaMat克隆生成CPU端Mat
+        //void Clone_Device(const Mat& src, CudaMat& dst, const Option& option);     // 从CPU端Mat克隆生成GPU端CudaMat
+        //void Clone_Device(const CudaMat& src, Mat& dst, const Option& option);     // 从GPU端CudaMat克隆生成CPU端Mat
+    private:
+        int device_index;
     };
 }
 #endif

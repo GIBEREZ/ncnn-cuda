@@ -3,6 +3,66 @@
 
 #include "command.h"
 
+#if NCNN_CUDA
+
+namespace ncnn {
+
+    [[nodiscard]] std::vector<cudaDeviceProp> get_device_properties()
+    {
+        int device_count = 0;
+        cudaGetDeviceCount(&device_count);                    // 获取系统中可用 GPU 数量
+        printf("CUDA devices found: %d\n", device_count);     // 打印 GPU 数量
+
+        std::vector<cudaDeviceProp> CudaDevices;
+
+        for (int i = 0; i < device_count; i++)
+        {
+            cudaDeviceProp prop{};
+            cudaGetDeviceProperties(&prop, i);               // 获取第 i 个 GPU 的属性
+
+            printf("Device %d: %s\n", i, prop.name);        // 打印 GPU 名称
+            printf("  Compute capability: %d.%d\n", prop.major, prop.minor); // 计算能力
+            printf("  Total global memory: %.2f GB\n", prop.totalGlobalMem / 1024.0 / 1024.0 / 1024.0); // 显存大小
+            printf("  Multiprocessors: %d\n", prop.multiProcessorCount);     // 核心数量
+            printf("  Max threads per block: %d\n", prop.maxThreadsPerBlock);// 每 block 最大线程数
+            printf("  Max threads per multiprocessor: %d\n", prop.maxThreadsPerMultiProcessor);// 每流式多处理器最大线程数
+            printf("  Warp size: %d\n", prop.warpSize);      // warp 大小
+            printf("\n");
+
+            CudaDevices.push_back(prop);
+        }
+
+        return CudaDevices;
+    }
+
+    CudaCompute::CudaCompute(int DeviceIndex)
+    {
+        this->device_index = DeviceIndex;
+        cudaSetDevice(this->device_index);
+    }
+
+    CudaCompute::~CudaCompute()
+    {
+
+    }
+
+    void CudaCompute::Upload_Device(const Mat& src, CudaMat& dst, const Option& option)
+    {
+        if (src.empty()) return;
+        size_t bytes = src.total() * src.elemsize;                          // 计算总字节数
+        cudaMemcpy(dst.data, src.data, bytes, cudaMemcpyHostToDevice); // CPU→GPU 拷贝
+    }
+
+    void CudaCompute::Download_Device(const CudaMat& src, Mat& dst, const Option& option)
+    {
+        if (src.empty()) return;
+        size_t bytes = src.total() * src.elemsize;                          // 计算总字节数
+        cudaMemcpy(dst.data, src.data, bytes, cudaMemcpyDeviceToHost); // 同步拷贝：GPU→CPU
+    }
+}
+
+#endif
+
 #if NCNN_VULKAN
 
 #include "option.h"
