@@ -112,6 +112,14 @@ int Layer::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option
     return 0;
 }
 
+int Layer::forward_inplace(const CudaMat& input_blob, const Option& opt) const
+{
+    if (!support_inplace)
+        return -1;
+
+    return 0;
+}
+
 #endif
 
 #if NCNN_VULKAN
@@ -197,6 +205,16 @@ Layer* create_layer_cpu(const char* type)
 
     return create_layer_cpu(index);
 }
+
+Layer* create_layer_cuda(const char* type)
+{
+    int index = layer_to_index(type);
+    if (index == -1)
+        return 0;
+
+    return create_layer_cuda(index);
+}
+
 
 #if NCNN_VULKAN
 Layer* create_layer_vulkan(const char* type)
@@ -527,6 +545,19 @@ Layer* create_layer_cpu(int index)
     layer->typeindex = index;
     return layer;
 }
+
+#if NCNN_CUDA
+Layer* create_layer_cuda(int index)
+{
+    layer_creator_func layer_creator = layer_registry_cuda[index].creator;
+    if (!layer_creator)
+        return nullptr;
+
+    Layer* layer = layer_creator(0);
+    layer->typeindex = index;
+    return layer;
+}
+#endif
 
 #if NCNN_VULKAN
 Layer* create_layer_vulkan(int index)

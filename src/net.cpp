@@ -1069,6 +1069,14 @@ int Net::load_param(const DataReader& dr)
         SCAN_VALUE("%d", top_count)
 
         Layer* layer = create_overwrite_builtin_layer(layer_type);
+
+#if NCNN_CUDA
+        if (opt.use_cuda)
+        {
+            layer = create_layer_cuda(layer_type);
+        }
+#endif
+
 #if NCNN_VULKAN
         if (!layer && opt.use_vulkan_compute && d->vkdev)
         {
@@ -2253,7 +2261,11 @@ int Extractor::extract(int blob_index, Mat& feat, int type)
 #if NCNN_CUDA
         if (d->opt.use_cuda)
         {
-
+            if (d->opt.use_vulkan_compute)
+            {
+                d->opt.use_vulkan_compute = false;
+            }
+            ret = d->net->d->forward_layer(layer_index, d->blob_mats, d->opt);
         }
 #endif
 

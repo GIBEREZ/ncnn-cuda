@@ -100,6 +100,7 @@ public:
     // upload weight blob from host to NVIDIA-CUDA device
     virtual int upload_model(const Option& _opt);
     virtual int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
+    virtual int forward_inplace(const CudaMat& input_blob, const Option& opt) const;
 #endif
 
 #if NCNN_VULKAN
@@ -187,7 +188,7 @@ struct overwrite_builtin_layer_registry_entry
     NCNN_EXPORT Layer* create_layer_naive(const char* type);
     NCNN_EXPORT Layer* create_layer_cpu(const char* type);
     #if NCNN_CUDA
-        NCNN_EXPORT Layer* create_layer_cuda(const char* type);
+        Layer* create_layer_cuda(const char* type);
     #endif
     #if NCNN_VULKAN
         NCNN_EXPORT Layer* create_layer_vulkan(const char* type);
@@ -200,7 +201,7 @@ NCNN_EXPORT Layer* create_layer_naive(int index);
 NCNN_EXPORT Layer* create_layer_cpu(int index);
 
 #if NCNN_CUDA
-    NCNN_EXPORT Layer* create_layer_cuda(int index);
+    Layer* create_layer_cuda(int index);
 #endif
 #if NCNN_VULKAN
     NCNN_EXPORT Layer* create_layer_vulkan(int index);

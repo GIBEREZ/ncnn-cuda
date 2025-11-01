@@ -90,7 +90,11 @@ option(NCNN_INT8 "int8 inference" ON)
 option(NCNN_BF16 "bf16 inference" ON)
 option(NCNN_FORCE_INLINE "force inline some function" ON)
 option(NCNN_CUDA "Enable NVIDIA-CUDA GPU backend" ON)
-option(NCNN_CUDNN "Enable NVIDIA-CUDNN Acceleration Library" ON)
+
+# ¼ì²é»¥³âÌõ¼þ
+if(NCNN_CUDA AND NCNN_VULKAN)
+    message(FATAL_ERROR "NCNN_CUDA and NCNN_VULKAN cannot be ON at the same time. Please choose only one.")
+endif()
 
 if(ANDROID OR IOS OR NCNN_SIMPLESTL)
     option(NCNN_DISABLE_RTTI "disable rtti" ON)

@@ -63,3 +63,9 @@ static const layer_registry_entry layer_registry_vulkan[] = {
 @layer_registry_vulkan@
 };
 #endif // NCNN_VULKAN
+
+#if NCNN_CUDA
+static const layer_registry_entry layer_registry_cuda[] = {
+@layer_registry_cuda@
+};
+#endif // NCNN_CUDA
