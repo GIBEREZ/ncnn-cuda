@@ -539,6 +539,23 @@ CudaMat::CudaMat(int w, int h, int d, int c, size_t elemsize)
     create(w, h, d, c, elemsize);
 }
 
+CudaMat::CudaMat(const CudaMat& cuda_mat)
+{
+
+}
+
+CudaMat::CudaMat(const Mat& mat)
+{
+    if (mat.dims == 1)
+        create(mat.w, mat.elemsize);
+    else if (mat.dims == 2)
+        create(mat.w, mat.h, mat.elemsize);
+    else if (mat.dims == 3)
+        create(mat.w, mat.h, mat.c, mat.elemsize);
+    else if (mat.dims == 4)
+        create(mat.w, mat.h, mat.d, mat.c, mat.elemsize);
+}
+
 CudaMat::~CudaMat()
 {
     release();

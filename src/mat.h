@@ -349,6 +349,7 @@ public:
     CudaMat(int w, int h, int d, int c, size_t elemsize);
     // copy
     CudaMat(const CudaMat& cuda_mat);
+    CudaMat(const Mat& mat);
     // init member variable
     void init();
     // release

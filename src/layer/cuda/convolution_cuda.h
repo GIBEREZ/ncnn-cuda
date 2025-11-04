@@ -13,9 +13,11 @@ namespace ncnn {
     public:
         Convolution_cuda();
         virtual int load_param(const ParamDict& pd);
+        virtual int load_model(const ModelBin& mb);
         virtual int upload_model(const Option& opt);
         virtual int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
-        int relu_cuda(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt);
+        int Convolutio_cuda(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
+
     public:
         Layer* padding;         // 边缘补0操作
         CudaMat weight_data;    // 模型权重矩阵数据
@@ -32,6 +34,7 @@ namespace ncnn {
         int dilation_h;         // 卷积核在高度的碰撞系数
         int stride_w;           // 卷积核在宽度的滑动步长。
         int stride_h;           // 卷积核在高度的滑动步长。
+        int dynamic_weight;     // 动态卷积支持
         int weight_data_size;   // 权重数据总大小，通常等于 num_output * (input_channels/group) * kernel_h * kernel_w。
         int bias_term;          // 是否使用偏置项，1表示有bias，0表示没有
         int activation_type;    // 激活函数类型0 = 无激活；1 = ReLU；2 = LeakyReLU；3 = Clip；4 = Sigmoid
