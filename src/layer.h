@@ -51,6 +51,9 @@ public:
     // support vulkan compute
     bool support_vulkan;
 
+    // support cuda compute
+    bool support_cuda;
+
     // accept input blob with packed storage
     bool support_packing;
 

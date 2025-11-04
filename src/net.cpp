@@ -1071,7 +1071,7 @@ int Net::load_param(const DataReader& dr)
         Layer* layer = create_overwrite_builtin_layer(layer_type);
 
 #if NCNN_CUDA
-        if (opt.use_cuda)
+        if (!layer && opt.use_cuda)
         {
             layer = create_layer_cuda(layer_type);
         }
@@ -1262,6 +1262,24 @@ int Net::load_param(const DataReader& dr)
 
     d->update_input_output_indexes();
     d->update_input_output_names();
+
+    // ===== 打印 layer 信息用于调试 CUDA layer =====
+    NCNN_LOGE("=== Loaded Layers ===");
+    for (size_t i = 0; i < d->layers.size(); i++)
+    {
+        Layer* layer = d->layers[i];
+        if (!layer) continue;
+
+        // 打印 layer 名称和类型
+        NCNN_LOGE("layer %zu: type=%s, name=%s", i, layer->type.c_str(), layer->name.c_str());
+
+#if NCNN_CUDA
+        // 如果你的 CUDA layer 类里加了 support_cuda 标志
+        if (layer->support_cuda)
+            NCNN_LOGE(" -> this layer is CUDA version");
+#endif
+    }
+    NCNN_LOGE("=====================");
 
 #undef SCAN_VALUE
     return 0;

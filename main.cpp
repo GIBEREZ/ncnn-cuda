@@ -12,21 +12,19 @@
 int main() {
     ncnn::get_device_properties();
 
-    // 创建输入和输出的 CudaMat
-    ncnn::CudaMat input, output;
-    input.create(640, 640, 3, sizeof(float));  // 640x640 输入，3 个通道
+    ncnn::Net net;
 
-    // 创建一个 ReLU 层
-    ncnn::ReLU_cuda relu_layer;
-    output.create(input.w, input.h, input.c, sizeof(float)); // 分配 GPU 内存
-    // 前向传播
-    relu_layer.forward(input, output, ncnn::Option());
-    output.download(output);
-    std::vector<float> host_output(output.total());
+    int ret = net.load_param("D:/software/Projects/C++Projects/ncnn-cuda/y8s-pig-detect-300e-3classes.param");
+    if (ret != 0)
+    {
+        printf("Failed to load param file\n");
+        return -1;
+    }
 
-    // 清理资源
-    input.release();
-    output.release();
+    ncnn::Option option;
+    option.use_cuda = true;
+
+    ncnn::Extractor extractor = net.create_extractor();
 
     return 0;
 }

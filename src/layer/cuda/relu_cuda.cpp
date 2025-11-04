@@ -14,6 +14,8 @@ namespace ncnn {
         one_blob_only = true;
         // 是否支持原地计算
         support_inplace = true;
+        // 该层支持cuda
+        support_cuda = true;
     }
     int ReLU_cuda::load_param(const ParamDict& pd)
     {
@@ -28,6 +30,7 @@ namespace ncnn {
 
     int ReLU_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
+        NCNN_LOGE("=== Running CUDA ReLU forward ==="); // 调试用
         relu_cuda(input_blob, output_blob, input_blob.total());
         return 0;
     }

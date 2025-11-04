@@ -904,11 +904,17 @@ if(NCNN_PYTHON)
 endif()
 
 # ===== 添加你的 main.cpp 可执行文件 =====
-add_executable(ncnn_test main.cpp)
-# 链接 ncnn 库（CUDA 支持版本）
-target_link_libraries(ncnn_test PRIVATE ncnn ncnn_cuda_lib)
-
+add_executable(ncnn_cuda main.cpp)
+# 链接 ncnn 库（CUDA 支持版本）（cudnn不能够被添加到ncnn_cuda_lib文件当中作为编译，需要单独作引用）
+target_link_libraries(ncnn_cuda PRIVATE
+        ncnn
+        ncnn_cuda_lib
+        "D:/software/CUDAv12.9/lib/x64/cudnn.lib"
+        "D:/software/CUDAv12.9/lib/x64/cudart.lib"
+        "D:/software/CUDAv12.9/lib/x64/cublas.lib"
+        "D:/software/CUDAv12.9/lib/x64/cublasLt.lib"
+)
 # 包含头文件目录（ncnn 的头文件路径）
-target_include_directories(ncnn_test PRIVATE
+target_include_directories(ncnn_cuda PRIVATE
         ${CMAKE_SOURCE_DIR}/src
 )
