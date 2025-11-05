@@ -143,7 +143,6 @@ macro(ncnn_add_layer class)
             source_group("sources\\layers\\cuda" FILES "${cuda_cu}")
 
             # Ìí¼Ó cpp ÎÄ¼þ
-            message(STATUS "Detected CUDA layer for '${name}', registering ${name}_cuda.cpp/.h")
             list(APPEND ncnn_SRCS "${cuda_source}")
             set(WITH_LAYER_${name}_cuda 1)
 

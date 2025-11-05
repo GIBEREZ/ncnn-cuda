@@ -16,7 +16,7 @@ namespace ncnn {
         virtual int load_model(const ModelBin& mb);
         virtual int upload_model(const Option& opt);
         virtual int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
-        int Convolutio_cuda(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
+        int Convolution_cuda_forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
 
     public:
         Layer* padding;         // ±ßÔµ²¹0²Ù×÷

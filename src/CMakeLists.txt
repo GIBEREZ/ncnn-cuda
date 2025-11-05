@@ -43,6 +43,8 @@ set(ncnn_SRCS
     simplemath.cpp
     simplevk.cpp
     ../main.cpp
+        layer/cuda/innerproduct_cuda.cpp
+        layer/cuda/innerproduct_cuda.h
 )
 
 if(ANDROID)

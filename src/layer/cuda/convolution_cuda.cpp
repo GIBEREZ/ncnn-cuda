@@ -59,8 +59,8 @@ namespace ncnn {
 
     int Convolution_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
-        NCNN_LOGE("=== Running CUDA Convolution forward ==="); // µ˜ ‘”√
-        Convolutio_cuda(input_blob, output_blob, opt);
+        NCNN_LOGE("=== Running CUDA Convolution forward ===");
+        Convolution_cuda_forward(input_blob, output_blob, opt);
         NCNN_LOGE("=== CUDA Convolution forward done ===");
         return 0;
     }

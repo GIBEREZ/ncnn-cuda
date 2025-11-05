@@ -6,7 +6,7 @@
 #include <cudnn.h>
 
 namespace ncnn {
-    int Convolution_cuda::Convolutio_cuda(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
+    int Convolution_cuda::Convolution_cuda_forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
         // 1. ´´½¨ cuDNN ¾ä±ú
         cudnnHandle_t handle;
