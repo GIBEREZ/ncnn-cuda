@@ -147,7 +147,7 @@ public:
 #if NCNN_CUDA
     // enable NVIDIA CUDA+CUDNN inference
     bool use_cuda;
-    bool use_cudnn;
+
 #endif
 };
 
