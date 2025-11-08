@@ -3,6 +3,7 @@
 
 #include "net.h"
 
+#include "command.h"
 #include "cpu.h"
 #include "datareader.h"
 #include "layer_type.h"
@@ -41,7 +42,7 @@ public:
     int forward_layer(int layer_index, std::vector<Mat>& blob_mats, const Option& opt) const;
 
 #if NCNN_CUDA
-    int forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const Option& opt) const;
+    int forward_layer(int layer_index, std::vector<Mat>& blob_mats, std::vector<CudaMat>& blob_mats_cuda, CudaCompute& CUDA, const Option& opt) const;
 #endif
 
 #if NCNN_VULKAN
@@ -233,7 +234,7 @@ int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, cons
 }
 
 #if NCNN_CUDA
-int NetPrivate::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats_gpu, const Option& opt) const
+int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, std::vector<CudaMat>& blob_mats_cuda, CudaCompute& CUDA, const Option& opt) const
 {
     // 1.获取所有layer层
     const Layer* layer = layers[layer_index];
@@ -245,9 +246,9 @@ int NetPrivate::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats_g
     // 3.遍历当前层的所有 bottom blobs
     for (int bottom_blob_index : layer->bottoms)
     {
-        if (blob_mats_gpu[bottom_blob_index].dims == 0)
+        if (blob_mats_cuda[bottom_blob_index].dims == 0)
         {
-            int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats_gpu, opt);
+            int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats, blob_mats_cuda, CUDA, opt);
             if (ret != 0) return ret;
         }
     }
@@ -1373,7 +1374,7 @@ int Net::load_param(const DataReader& dr)
             NCNN_LOGE(" -> this layer is CUDA version");
 #endif
     }
-    NCNN_LOGE("=====================");
+    NCNN_LOGE("=====================\n");
 
 #undef SCAN_VALUE
     return 0;
@@ -2188,6 +2189,10 @@ public:
     std::vector<Mat> blob_mats;
     Option opt;
 
+#if NCNN_CUDA
+    std::vector<CudaMat> blob_mats_cuda;
+#endif
+
 #if NCNN_VULKAN
     VkAllocator* local_blob_vkallocator;
     VkAllocator* local_staging_vkallocator;
@@ -2394,11 +2399,14 @@ int Extractor::extract(int blob_index, Mat& feat, int type)
             {
                 d->opt.use_vulkan_compute = false;
             }
-            ret = d->net->d->forward_layer(layer_index, d->blob_mats, d->opt);
-            if (ret != 0)
+            CudaCompute CUDA(0);
+            CudaMat gpu_Mat;
+            NCNN_LOGE("===CUDA和gpu_Mat初始化无误===");
+            ret = extract(blob_index, gpu_Mat, CUDA);
+            if (ret == 0 && d->blob_mats[blob_index].dims == 0 && gpu_Mat.dims != 0)
             {
-                NCNN_LOGE("There is an issue with the %d layer\n", layer_index);
-                return -1;
+                NCNN_LOGE("===CudaCompute attempts to download Mat data from the device===");
+                CUDA.Download_Device(gpu_Mat, d->blob_mats[blob_index], d->opt);
             }
         }
 #endif
@@ -2571,7 +2579,17 @@ int Extractor::input(const char* blob_name, const CudaMat& input_blob)
     return input(blob_index, input_blob);
 }
 
-int Extractor::extract(const char* blob_name, CudaMat& feat)
+int Extractor::input(int blob_index, const CudaMat& input_blob)
+{
+    if (blob_index < 0 || blob_index >= (int)d->blob_mats.size())
+        return -1;
+
+    d->blob_mats_cuda[blob_index] = input_blob;
+
+    return 0;
+}
+
+int Extractor::extract(const char* blob_name, CudaMat& feat, CudaCompute& CUDA)
 {
     int blob_index = d->net->find_blob_index_by_name(blob_name);
     if (blob_index == -1)
@@ -2585,7 +2603,34 @@ int Extractor::extract(const char* blob_name, CudaMat& feat)
 
         return -1;
     }
-    return extract(blob_index, feat);
+    return extract(blob_index, feat, CUDA);
+}
+
+int Extractor::extract(int blob_index, CudaMat& feat, CudaCompute& CUDA)
+{
+    if (blob_index < 0 || blob_index >= static_cast<int>(d->blob_mats.size()))
+        return -1;
+
+    int ret = 0;
+    NCNN_LOGE("0");
+    if (d->blob_mats_cuda[blob_index].dims == 0)
+    {
+        NCNN_LOGE("1");
+        if (d->blob_mats[blob_index].dims != 0)
+        {
+            NCNN_LOGE("2");
+            CUDA.Upload_Device(d->blob_mats[blob_index], feat, d->opt);
+            d->blob_mats_cuda[blob_index] = feat;
+        }
+        else
+        {
+            NCNN_LOGE("3");
+            int layer_index = d->net->blobs()[blob_index].producer;
+            ret = d->net->d->forward_layer(layer_index, d->blob_mats, d->blob_mats_cuda, CUDA, d->opt);
+        }
+    }
+
+    return ret;
 }
 #endif
 

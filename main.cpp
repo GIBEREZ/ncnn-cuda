@@ -62,25 +62,25 @@ int main() {
     // 可选：归一化（例如到 [0,1]）
     input.substract_mean_normalize(nullptr, nullptr);
 
-    printf("随机输入图像生成成功，尺寸: %d x %d x %d\n", width, height, channels);
+    NCNN_LOGE("随机输入图像生成成功，尺寸: %d x %d x %d", width, height, channels);
 
     // ================== 网络推理 ==================
     ncnn::Extractor extractor = net.create_extractor();
 
     // 设置输入层（对应 param 文件中的名称）
     extractor.input("in0", input);
+    NCNN_LOGE("输入层设置完毕");
 
     // 提取输出层
     ncnn::Mat output;
     extractor.extract("out0", output);
 
     // ================== 打印输出 ==================
-    printf("推理完成，输出尺寸: %d x %d x %d\n", output.c, output.h, output.w);
+    NCNN_LOGE("推理完成，输出尺寸: %d x %d x %d", output.c, output.h, output.w);
     for (int i = 0; i < output.total(); i++)
     {
-        printf("%.6f ", output[i]);
+        NCNN_LOGE("%.6f ", output[i]);
     }
-    printf("\n");
 
     return 0;
 }

@@ -11,7 +11,7 @@ namespace ncnn {
     {
         int device_count = 0;
         cudaGetDeviceCount(&device_count);                    // 获取系统中可用 GPU 数量
-        printf("CUDA devices found: %d\n", device_count);     // 打印 GPU 数量
+        NCNN_LOGE("CUDA devices found: %d", device_count);     // 打印 GPU 数量
 
         std::vector<cudaDeviceProp> CudaDevices;
 
@@ -19,16 +19,15 @@ namespace ncnn {
         {
             cudaDeviceProp prop{};
             cudaGetDeviceProperties(&prop, i);               // 获取第 i 个 GPU 的属性
-
-            printf("Device %d: %s\n", i, prop.name);        // 打印 GPU 名称
-            printf("  Compute capability: %d.%d\n", prop.major, prop.minor); // 计算能力
-            printf("  Total global memory: %.2f GB\n", prop.totalGlobalMem / 1024.0 / 1024.0 / 1024.0); // 显存大小
-            printf("  Multiprocessors: %d\n", prop.multiProcessorCount);     // 核心数量
-            printf("  Max threads per block: %d\n", prop.maxThreadsPerBlock);// 每 block 最大线程数
-            printf("  Max threads per multiprocessor: %d\n", prop.maxThreadsPerMultiProcessor);// 每流式多处理器最大线程数
-            printf("  Warp size: %d\n", prop.warpSize);      // warp 大小
-            printf("\n");
-
+            NCNN_LOGE("=== Obtain GPU device status ===");
+            NCNN_LOGE("Device %d: %s", i, prop.name);        // 打印 GPU 名称
+            NCNN_LOGE("  Compute capability: %d.%d", prop.major, prop.minor); // 计算能力
+            NCNN_LOGE("  Total global memory: %.2f GB", prop.totalGlobalMem / 1024.0 / 1024.0 / 1024.0); // 显存大小
+            NCNN_LOGE("  Multiprocessors: %d", prop.multiProcessorCount);     // 核心数量
+            NCNN_LOGE("  Max threads per block: %d", prop.maxThreadsPerBlock);// 每 block 最大线程数
+            NCNN_LOGE("  Max threads per multiprocessor: %d", prop.maxThreadsPerMultiProcessor);// 每流式多处理器最大线程数
+            NCNN_LOGE("  Warp size: %d", prop.warpSize);      // warp 大小
+            NCNN_LOGE("=====================\n");
             CudaDevices.push_back(prop);
         }
 
