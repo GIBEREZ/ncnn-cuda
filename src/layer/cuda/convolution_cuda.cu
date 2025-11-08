@@ -121,7 +121,7 @@ namespace ncnn {
             handle,                               // cudnn句柄
             &alpha,                               // 输入缩放系数，1.0f表示使用原输入
             input_desc, input_blob.data,    // 输入描述符+数据
-            filter_desc, weight_data,          // 卷积核描述符+数据（需提前上传GPU）
+            filter_desc, weight_blob,          // 卷积核描述符+数据（需提前上传GPU）
             conv_desc, CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM,  // 卷积描述符+算法
             d_workspace,
             workspace_bytes,                      // 临时工作空间
@@ -137,7 +137,7 @@ namespace ncnn {
                 handle,
                 &alpha,
                 bias_desc,
-                bias_data.data,
+                bias_blob.data,
                 &beta,
                 output_desc,
                 output_blob.data

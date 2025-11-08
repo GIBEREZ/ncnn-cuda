@@ -516,57 +516,191 @@ void Mat::create_like(const Mat& m, Allocator* _allocator)
 
 CudaMat::CudaMat()
 {
-    init();
+
 }
 
-CudaMat::CudaMat(int w, size_t elemsize)
+CudaMat::CudaMat(int w, size_t elemsize) :
+    elemsize(0), gpu_data(nullptr), w(0), h(0), d(0), c(0), dims(0), cstep(0), alloc_bytes(0), elempack(0)
 {
     create(w, elemsize);
 }
 
-CudaMat::CudaMat(int w, int h, size_t elemsize)
+CudaMat::CudaMat(int w, int h, size_t elemsize) :
+    elemsize(0), gpu_data(nullptr), w(0), h(0), d(0), c(0), dims(0), cstep(0), alloc_bytes(0), elempack(0)
 {
     create(w, h, elemsize);
 }
 
-CudaMat::CudaMat(int w, int h, int c, size_t elemsize)
+CudaMat::CudaMat(int w, int h, int c, size_t elemsize) :
+    elemsize(0), gpu_data(nullptr), w(0), h(0), d(0), c(0), dims(0), cstep(0), alloc_bytes(0), elempack(0)
 {
     create(w, h, c, elemsize);
 }
 
-CudaMat::CudaMat(int w, int h, int d, int c, size_t elemsize)
+CudaMat::CudaMat(int w, int h, int d, int c, size_t elemsize) :
+    elemsize(0), gpu_data(nullptr), w(0), h(0), d(0), c(0), dims(0), cstep(0), alloc_bytes(0), elempack(0)
 {
     create(w, h, d, c, elemsize);
 }
 
-CudaMat::CudaMat(const CudaMat& cuda_mat)
+CudaMat::CudaMat(int w, void* data, size_t elemsize) :
+    elemsize(0), gpu_data(nullptr), w(0), h(0), d(0), c(0), dims(0), cstep(0), alloc_bytes(0), elempack(0)
 {
-
+    create(w, elemsize);
+    cudaMemcpy(gpu_data, data, total() * elemsize, cudaMemcpyHostToDevice);
+    cudaDeviceSynchronize();
 }
 
-CudaMat::CudaMat(const Mat& mat)
+CudaMat::CudaMat(int w, int h, void* data, size_t elemsize) :
+    elemsize(0), gpu_data(nullptr), w(0), h(0), d(0), c(0), dims(0), cstep(0), alloc_bytes(0), elempack(0)
 {
-    if (mat.dims == 1)
-        create(mat.w, mat.elemsize);
-    else if (mat.dims == 2)
-        create(mat.w, mat.h, mat.elemsize);
-    else if (mat.dims == 3)
-        create(mat.w, mat.h, mat.c, mat.elemsize);
-    else if (mat.dims == 4)
-        create(mat.w, mat.h, mat.d, mat.c, mat.elemsize);
+    create(w, h, elemsize);
+    cudaMemcpy(gpu_data, data, total() * elemsize, cudaMemcpyHostToDevice);
+    cudaDeviceSynchronize();
+}
+
+CudaMat::CudaMat(int w, int h, int c, void* data, size_t elemsize) :
+    elemsize(0), gpu_data(nullptr), w(0), h(0), d(0), c(0), dims(0), cstep(0), alloc_bytes(0), elempack(0)
+{
+    create(w, h, c, elemsize);
+    cudaMemcpy(gpu_data, data, total() * elemsize, cudaMemcpyHostToDevice);
+    cudaDeviceSynchronize();
+}
+
+CudaMat::CudaMat(int w, int h, int d, int c, void* data, size_t elemsize) :
+    elemsize(0), gpu_data(nullptr), w(0), h(0), d(0), c(0), dims(0), cstep(0), alloc_bytes(0), elempack(0)
+{
+    create(w, h, d, c, elemsize);
+    cudaMemcpy(gpu_data, data, total() * elemsize, cudaMemcpyHostToDevice);
+    cudaDeviceSynchronize();
+}
+
+CudaMat::CudaMat(const Mat& mat) :
+    elemsize(mat.elemsize), gpu_data(nullptr), w(mat.w), h(mat.h), d(mat.d), c(mat.c), dims(mat.dims), cstep(0), alloc_bytes(0), elempack(0)
+{
+
+    if (dims == 1)
+    {
+        cstep = alignSize(w * elemsize, 16) / elemsize;
+        alloc_bytes = alignSize(total() * elemsize, 16);
+        cudaError_t err = cudaMalloc(&gpu_data, alloc_bytes);
+        if (err != cudaSuccess)
+        {
+            NCNN_LOGE("===CudaMat::CudaMat(const Mat& mat) 分配内存=== cudaMalloc failed: %s\n", cudaGetErrorString(err));
+            gpu_data = nullptr;
+            return;
+        }
+        err = cudaMemcpy(gpu_data, mat.data, total() * elemsize, cudaMemcpyHostToDevice);
+        if (err != cudaSuccess)
+        {
+            NCNN_LOGE("===CudaMat::CudaMat(const Mat& mat) 拷贝数据=== cudaMemcpy failed: %s\n", cudaGetErrorString(err));
+            cudaFree(gpu_data);
+            gpu_data = nullptr;
+            return;
+        }
+    }
+    else if (dims == 2 || dims == 3 || dims == 4)
+    {
+        cstep = alignSize(w * h * elemsize, 16) / elemsize;
+        alloc_bytes = alignSize(total() * elemsize, 16);
+        cudaError_t err = cudaMalloc(&gpu_data, alloc_bytes);
+        if (err != cudaSuccess)
+        {
+            NCNN_LOGE("===CudaMat::CudaMat(const Mat& mat) 分配内存=== cudaMalloc failed: %s\n", cudaGetErrorString(err));
+            gpu_data = nullptr;
+            return;
+        }
+        err = cudaMemcpy(gpu_data, mat.data, total() * elemsize, cudaMemcpyHostToDevice);
+        if (err != cudaSuccess)
+        {
+            NCNN_LOGE("===CudaMat::CudaMat(const Mat& mat) 拷贝数据=== cudaMemcpy failed: %s\n", cudaGetErrorString(err));
+            cudaFree(gpu_data);
+            gpu_data = nullptr;
+            return;
+        }
+    }
+}
+
+
+void CudaMat::create(int w, size_t elemsize)
+{
+    release();
+    this->elemsize = elemsize;
+    this->w = w;
+    this->h = 1;
+    this->d = 1;
+    this->c = 1;
+    this->dims = 1;
+    cstep = alignSize(w * elemsize, 16) / elemsize;
+    alloc_bytes = alignSize(total() * elemsize, 16);
+    cudaError_t err = cudaMalloc(&gpu_data, alloc_bytes);
+    if (err != cudaSuccess)
+    {
+        NCNN_LOGE("===CudaMat::create()=== cudaMalloc failed: %s\n", cudaGetErrorString(err));
+        gpu_data = nullptr;
+    }
+}
+
+void CudaMat::create(int w, int h, size_t elemsize)
+{
+    release();
+    this->elemsize = elemsize;
+    this->w = w;
+    this->h = h;
+    this->d = 1;
+    this->c = 1;
+    this->dims = 2;
+    cstep = alignSize(w * h * elemsize, 16) / elemsize;
+    alloc_bytes = alignSize(total() * elemsize, 16);
+    cudaError_t err = cudaMalloc(&gpu_data, alloc_bytes);
+    if (err != cudaSuccess)
+    {
+        NCNN_LOGE("===CudaMat::create()=== cudaMalloc failed: %s\n", cudaGetErrorString(err));
+        gpu_data = nullptr;
+    }
+}
+
+void CudaMat::create(int w, int h, int c, size_t elemsize)
+{
+    release();
+    this->elemsize = elemsize;
+    this->w = w;
+    this->h = h;
+    this->d = 1;
+    this->c = c;
+    this->dims = 3;
+    cstep = alignSize(w * h * elemsize, 16) / elemsize;
+    alloc_bytes = alignSize(total() * elemsize, 16);
+    cudaError_t err = cudaMalloc(&gpu_data, alloc_bytes);
+    if (err != cudaSuccess)
+    {
+        NCNN_LOGE("===CudaMat::create()=== cudaMalloc failed: %s\n", cudaGetErrorString(err));
+        gpu_data = nullptr;
+    }
+}
+
+void CudaMat::create(int w, int h, int d, int c, size_t elemsize)
+{
+    release();
+    this->elemsize = elemsize;
+    this->w = w;
+    this->h = h;
+    this->d = d;
+    this->c = c;
+    this->dims = 4;
+    cstep = alignSize(w * h * d * elemsize, 16) / elemsize;
+    alloc_bytes = alignSize(total() * elemsize, 16);
+    cudaError_t err = cudaMalloc(&gpu_data, alloc_bytes);
+    if (err != cudaSuccess)
+    {
+        NCNN_LOGE("===CudaMat::create()=== cudaMalloc failed: %s\n", cudaGetErrorString(err));
+        gpu_data = nullptr;
+    }
 }
 
 CudaMat::~CudaMat()
 {
     release();
-}
-
-void CudaMat::init()
-{
-    data = nullptr;
-    elemsize = 0;
-    dims = 0;
-    w = h = d = c = 0;
 }
 
 void CudaMat::release()
@@ -576,7 +710,7 @@ void CudaMat::release()
         cudaError_t err = cudaFree(data);
         if (err != cudaSuccess)
         {
-            fprintf(stderr, "CudaMat::release() cudaFree failed: %s\n", cudaGetErrorString(err));
+            NCNN_LOGE("===CudaMat::release()=== cudaFree failed: %s\n", cudaGetErrorString(err));
         }
         data = nullptr;
     }
@@ -586,94 +720,34 @@ void CudaMat::release()
     w = h = d = c = 0;
 }
 
-void CudaMat::create(int w, size_t elemsize)
-{
-    release();
-    this->w = w;
-    this->h = this->d = this->c = 1;
-    this->elemsize = elemsize;
-    this->elempack = 1;
-    this->dims = 1;
-    cstep = alignSize((size_t)w * h * elemsize, 16) / elemsize;
-    alloc_bytes = cstep * alignSize(c, 16) * elemsize;
-    cudaMalloc(&data, alloc_bytes);
-}
-
-void CudaMat::create(int w, int h, size_t elemsize)
-{
-    release();
-    this->w = w;
-    this->h = h;
-    this->d = this->c = 1;
-    this->elemsize = elemsize;
-    this->elempack = 1;
-    this->dims = 2;
-    cstep = alignSize((size_t)w * h * elemsize, 16) / elemsize;
-    alloc_bytes = cstep * alignSize(c, 16) * elemsize;
-    cudaMalloc(&data, alloc_bytes);
-}
-
-void CudaMat::create(int w, int h, int c, size_t elemsize)
-{
-    release();
-    this->w = w;
-    this->h = h;
-    this->c = c;
-    this->d = 1;
-    this->elemsize = elemsize;
-    this->elempack = 1;
-    this->dims = 3;
-    cstep = alignSize((size_t)w * h * elemsize, 16) / elemsize;
-    alloc_bytes = cstep * alignSize(c, 16) * elemsize;
-    cudaMalloc(&data, alloc_bytes);
-}
-
-void CudaMat::create(int w, int h, int d, int c, size_t elemsize)
-{
-    release();
-    this->w = w;
-    this->h = h;
-    this->d = d;
-    this->c = c;
-    this->elemsize = elemsize;
-    this->elempack = 1;
-    this->dims = 4;
-    cstep = alignSize((size_t)w * h * elemsize, 16) / elemsize;
-    alloc_bytes = cstep * alignSize(c, 16) * elemsize;
-    cudaMalloc(&data, alloc_bytes);
-}
-
-void CudaMat::create_like(const Mat& m)
-{
-    if (m.dims == 1)
-        create(m.w, m.elemsize);
-    else if (m.dims == 2)
-        create(m.w, m.h, m.elemsize);
-    else if (m.dims == 3)
-        create(m.w, m.h, m.c, m.elemsize);
-    else if (m.dims == 4)
-        create(m.w, m.h, m.d, m.c, m.elemsize);
-}
-
-void CudaMat::create_like(const CudaMat& m)
-{
-
-}
-
 bool CudaMat::empty() const
 {
-    return data == 0 || total() == 0;
+    return alloc_bytes==0 || w == 0 || h == 0 || c == 0 || d == 0;
+}
+
+size_t CudaMat::total() const
+{
+    if (dims <= 0) return 0;
+    size_t t = 1;
+    if (dims >= 1) t *= w;
+    if (dims >= 2) t *= h;
+    if (dims >= 3) t *= d;
+    if (dims >= 4) t *= c;
+    return t;
 }
 
 void CudaMat::download(CudaMat& cpu_mat) const
 {
     // 1. 执行 GPU → CPU 拷贝
-    cudaMemcpy(cpu_mat.data, data, total() * elemsize, cudaMemcpyDeviceToHost);
+    cudaMemcpy(cpu_mat.data, gpu_data, total() * elemsize, cudaMemcpyDeviceToHost);
     // 2. （可选）同步，确保 GPU 操作完成
     cudaDeviceSynchronize();
 }
 
+void CudaMat::upload(const Mat& mat) const
+{
 
+}
 
 #endif
 

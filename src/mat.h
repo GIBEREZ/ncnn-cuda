@@ -347,11 +347,13 @@ public:
     CudaMat(int w, int h, size_t elemsize);
     CudaMat(int w, int h, int c, size_t elemsize);
     CudaMat(int w, int h, int d, int c, size_t elemsize);
+    CudaMat(int w, void* data, size_t elemsize);
+    CudaMat(int w, int h, void* data, size_t elemsize);
+    CudaMat(int w, int h, int c, void* data, size_t elemsize);
+    CudaMat(int w, int h, int d, int c, void* data, size_t elemsize);
     // copy
     CudaMat(const CudaMat& cuda_mat);
     CudaMat(const Mat& mat);
-    // init member variable
-    void init();
     // release
     ~CudaMat();
     void release();
@@ -365,11 +367,14 @@ public:
     void create_like(const CudaMat& m);
 
     bool empty() const;
+    size_t total() const;
     void download(CudaMat& cpu_mat) const;
+    void upload(const Mat& mat) const;
 
     // Precision selection 4=float32/int32; 2 = float16; 1 = int8/uint8; 0 = empty
     size_t elemsize;
     // Data pointer in NVIDIA CUDA
+    void* gpu_data;     // gpu指针数据
     int w;              // 宽度
     int h;              // 高度
     int d;              // 深度
@@ -378,7 +383,6 @@ public:
     size_t cstep;       // 在C通道对齐
     size_t alloc_bytes; // 分配字节
     int elempack;       // 表示一个 通道/元素 的打包数量
-    int Memory_Location;// 当前内存所在位置
 };
 #endif
 

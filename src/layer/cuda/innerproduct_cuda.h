@@ -18,8 +18,8 @@ namespace ncnn
         virtual int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
         int InnerProduct_cuda_forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
     public:
-        CudaMat weight_data;    // 模型权重矩阵数据
-        CudaMat bias_data;      // 偏置矩阵数据
+        CudaMat weight_blob;    // 模型权重矩阵数据
+        CudaMat bias_blob;      // 偏置矩阵数据
 
         int num_output;         // 输出通道数
         int bias_term;          // 是否使用偏置项，1表示有bias，0表示没有

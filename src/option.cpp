@@ -19,8 +19,7 @@ Option::Option()
     workspace_allocator = 0;
 
 #if NCNN_CUDA
-    use_cuda = true;
-    use_cudnn = true;
+    use_cuda = false;
 #endif
 
 

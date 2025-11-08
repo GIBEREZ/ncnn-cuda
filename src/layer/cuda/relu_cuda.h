@@ -7,7 +7,7 @@
 #include "layer.h"
 
 namespace ncnn {
-void relu_cuda(const float* input_blob, float* output_blob, int number);
+void relu_cuda(const CudaMat& input_blob, CudaMat& output_blob, int number);
     class ReLU_cuda : public Layer
     {
     public:

@@ -20,8 +20,8 @@ namespace ncnn {
 
     public:
         Layer* padding;         // 边缘补0操作
-        CudaMat weight_data;    // 模型权重矩阵数据
-        CudaMat bias_data;      // 偏置矩阵数据
+        CudaMat weight_blob;    // 模型权重矩阵数据
+        CudaMat bias_blob;      // 偏置矩阵数据
 
         int num_output;         // 输出通道数
         int kernel_w;           // 卷积核宽度

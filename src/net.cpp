@@ -40,6 +40,10 @@ public:
     friend class Extractor;
     int forward_layer(int layer_index, std::vector<Mat>& blob_mats, const Option& opt) const;
 
+#if NCNN_CUDA
+    int forward_layer(int layer_index, std::vector<CudaMat>& blob_mats, const Option& opt) const;
+#endif
+
 #if NCNN_VULKAN
     int forward_layer(int layer_index, std::vector<Mat>& blob_mats, std::vector<VkMat>& blob_mats_gpu, VkCompute& cmd, const Option& opt) const;
 #endif // NCNN_VULKAN
@@ -227,6 +231,31 @@ int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, cons
 
     return 0;
 }
+
+#if NCNN_CUDA
+int NetPrivate::forward_layer(int layer_index, std::vector<CudaMat>& blob_mats_gpu, const Option& opt) const
+{
+    // 1.获取所有layer层
+    const Layer* layer = layers[layer_index];
+
+    // 2.如果是输入层，直接返回，不进行计算
+    if (layer->typeindex == LayerType::Input)
+        return 0;
+
+    // 3.遍历当前层的所有 bottom blobs
+    for (int bottom_blob_index : layer->bottoms)
+    {
+        if (blob_mats_gpu[bottom_blob_index].dims == 0)
+        {
+            int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats_gpu, opt);
+            if (ret != 0) return ret;
+        }
+    }
+
+    return 0;
+}
+
+#endif
 
 #if NCNN_VULKAN
 int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, std::vector<VkMat>& blob_mats_gpu, VkCompute& cmd, const Option& opt) const
@@ -1652,6 +1681,8 @@ int Net::load_model(const DataReader& dr)
         if (lret != 0)
         {
 #if NCNN_STRING
+            NCNN_LOGE("load_model error at layer %d, model content.", i);
+            NCNN_LOGE("lret == %d", lret);
             NCNN_LOGE("layer load_model %d %s failed", i, layer->name.c_str());
 #else
             NCNN_LOGE("layer load_model %d failed", i);
@@ -1694,8 +1725,12 @@ int Net::load_model(const DataReader& dr)
             }
         }
     }
+#if NCNN_CUDA
+    if (ret == 0 && opt.use_cuda)
+    {
 
-#if NCNN_VULKAN
+    }
+#elif NCNN_VULKAN
     if (ret == 0 && opt.use_vulkan_compute)
     {
         ret = d->upload_model();
@@ -2329,6 +2364,11 @@ int Extractor::extract(int blob_index, Mat& feat, int type)
                 d->opt.use_vulkan_compute = false;
             }
             ret = d->net->d->forward_layer(layer_index, d->blob_mats, d->opt);
+            if (ret != 0)
+            {
+                NCNN_LOGE("There is an issue with the %d layer\n", layer_index);
+                return -1;
+            }
         }
 #endif
 

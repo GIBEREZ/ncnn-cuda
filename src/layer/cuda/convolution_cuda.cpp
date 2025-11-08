@@ -39,15 +39,21 @@ namespace ncnn {
             return 0;
         }
 
-        weight_data = CudaMat(mb.load(weight_data_size, 0));
-        if (weight_data.empty())
+        weight_blob = CudaMat(mb.load(weight_data_size, 0));
+        if (weight_blob.empty())
+        {
+            NCNN_LOGE("===Convolution_cuda::load_model(const ModelBin& mb) º”‘ÿweight_blob=== weight_blob.empty() failed");
             return -100;
+        }
 
         if (bias_term)
         {
-            bias_data = CudaMat(mb.load(num_output, 0));
-            if (bias_data.empty())
+            bias_blob = CudaMat(mb.load(num_output, 0));
+            if (bias_blob.empty())
+            {
+                NCNN_LOGE("===Convolution_cuda::load_model(const ModelBin& mb) º”‘ÿbias_blob=== bias_blob.empty() failed");
                 return -100;
+            }
         }
         return 0;
     }

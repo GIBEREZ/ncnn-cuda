@@ -34,14 +34,13 @@ namespace ncnn {
             }
         }
     }
-   void relu_cuda(const float* input_blob, float* output_blob, int number)
+   void relu_cuda(const CudaMat& input_blob, CudaMat& output_blob, int number)
     {
-        // 定义每个线程块的线程数量
-        int threadsPerBlock = 1024;
-        // 计算总共需要多少个线程来处理整个数组。因为每个线程处理4个元素，所以总线程数应该是元素总数除以4，并向上取整。（因为float是4字节，16字节/4字节=4）
-        int totalThreadsNeeded = (number + 4 - 1) / 4;
-        // 计算网格中线程块的数量。每个线程块有256个线程，所以总线程数除以每个线程块的线程数，并向上取整。
-        int blocksPerGrid = (totalThreadsNeeded + threadsPerBlock - 1) / threadsPerBlock;
+        int threadsPerBlock = 1024;                                                         // 定义每个线程块的线程数量
+        int vec_size = 16 / input_blob.elemsize;                                            // 每个线程处理多少个元素（保证16B）
+        int totalThreadsNeeded = (number + vec_size - 1) / vec_size;                        // 计算总共需要多少个线程来处理整个数组。
+        int blocksPerGrid = (totalThreadsNeeded + threadsPerBlock - 1) / threadsPerBlock;   // 计算网格中线程块的数量。每个线程块有256个线程，所以总线程数除以每个线程块的线程数，并向上取整。
+
         relu_kernel_cuda<<<blocksPerGrid, threadsPerBlock>>>(input_blob, output_blob, number);
         // 同步设备，等待内核执行完成。这个函数会阻塞主机（CPU）直到设备（GPU）上的所有操作完成。
         cudaDeviceSynchronize();
