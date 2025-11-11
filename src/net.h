@@ -17,6 +17,7 @@
 #endif // NCNN_PLATFORM_API
 
 namespace ncnn {
+
 #if NCNN_CUDA
 class CudaCompute;
 #endif
@@ -214,10 +215,8 @@ public:
     int extract(int blob_index, Mat& feat, int type = 0);
 
 #if NCNN_CUDA
-    // 把一张已经在GPU中的数据，绑定到模型的输入blob上
     int input(const char* blob_name, const CudaMat& input_blob);
     int input(int blob_index, const CudaMat& input_blob);
-    // 从模型的输出blob中，提取结果到GPU（CudaMat）中
     int extract(const char* blob_name, CudaMat& feat, CudaCompute& CUDA);
     int extract(int blob_index, CudaMat& feat, CudaCompute& CUDA);
 #endif

@@ -23,8 +23,8 @@ namespace ncnn {
         virtual ~CudaCompute();
         void Upload_Device(const Mat& src, CudaMat& dst, const Option& option);    // 将CPU端Mat数据上传到GPU设备端CudaMat
         void Download_Device(const CudaMat& src, Mat& dst, const Option& option);  // 将GPU设备端CudaMat数据下载回CPU端Mat
-        //void Clone_Device(const Mat& src, CudaMat& dst, const Option& option);     // 从CPU端Mat克隆生成GPU端CudaMat
-        //void Clone_Device(const CudaMat& src, Mat& dst, const Option& option);     // 从GPU端CudaMat克隆生成CPU端Mat
+        void Clone_Device(const Mat& src, CudaMat& dst, const Option& option);     // 从CPU端Mat克隆生成GPU端CudaMat
+        void Clone_Device(const CudaMat& src, Mat& dst, const Option& option);     // 从GPU端CudaMat克隆生成CPU端Mat
     private:
         int device_index;
     };

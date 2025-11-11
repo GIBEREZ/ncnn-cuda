@@ -9,6 +9,7 @@
 namespace ncnn {
     class Reshape_cuda : public Layer
     {
+    public:
         Reshape_cuda();
         virtual int load_param(const ParamDict& pd);
         virtual int load_model(const ModelBin& mb);

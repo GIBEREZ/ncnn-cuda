@@ -352,8 +352,8 @@ public:
     CudaMat(int w, int h, int c, void* data, size_t elemsize);
     CudaMat(int w, int h, int d, int c, void* data, size_t elemsize);
     // copy
-    CudaMat(const CudaMat& cuda_mat);
     CudaMat(const Mat& mat);
+    CudaMat(const CudaMat& cuda_mat);
     // release
     ~CudaMat();
     void release();
@@ -363,8 +363,8 @@ public:
     void create(int w, int h, int c, size_t elemsize);
     void create(int w, int h, int d, int c, size_t elemsize);
     // Input a tensor and output a tensor of the same shape to GPU memory
-    void create_like(const Mat& m);
-    void create_like(const CudaMat& m);
+    void create_like(const Mat& mat);
+    void create_like(const CudaMat& cuda_mat);
 
     bool empty() const;
     size_t total() const;

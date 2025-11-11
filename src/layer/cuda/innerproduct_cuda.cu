@@ -85,8 +85,6 @@ namespace ncnn {
         const int K = input_blob.w;          // 输入矩阵列数（输入特征数）
         const int N = weight_blob.h;         // 权重矩阵的输出维度（输出特征数）
 
-        
-
         // 根据数据精度类型选择对应的核函数
         if (input_blob.elemsize == 4)
         {

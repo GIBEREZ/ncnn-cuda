@@ -7,7 +7,8 @@
 namespace ncnn{
     Padding_cuda::Padding_cuda()
     {
-
+        one_blob_only = true;
+        support_cuda = true;
     }
 
     int Padding_cuda::upload_model(const Option& opt)

@@ -51,13 +51,15 @@ int main() {
         pixel = static_cast<unsigned char>(std::rand() % 256);
     }
 
+
     // 封装成 ncnn::Mat
-    ncnn::Mat input = ncnn::Mat::from_pixels_resize(
+    ncnn::Mat A = ncnn::Mat::from_pixels_resize(
         image_data.data(),        // 像素数据
         ncnn::Mat::PIXEL_RGB,     // 像素格式
         width, height,         // 原图尺寸
         32, 32        // 网络输入尺寸
     );
+    ncnn::CudaMat input(A);
 
     // 可选：归一化（例如到 [0,1]）
     input.substract_mean_normalize(nullptr, nullptr);

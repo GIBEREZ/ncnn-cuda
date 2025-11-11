@@ -7,6 +7,7 @@
 namespace ncnn {
     Convolution_cuda::Convolution_cuda()
     {
+        one_blob_only = true;
         support_cuda = true;
         padding = 0;
     }
@@ -29,6 +30,8 @@ namespace ncnn {
         bias_term = pd.get(5, 0);
         activation_type = pd.get(9, 0);
         activation_params = pd.get(10, Mat());
+        if (pd.get(19, 0)) one_blob_only = false;
+
         return 0;
     }
 
@@ -65,9 +68,10 @@ namespace ncnn {
 
     int Convolution_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
-        NCNN_LOGE("=== Running CUDA Convolution forward ===");
+        NCNN_LOGE("  *  Running CUDA Convolution forward");
         Convolution_cuda_forward(input_blob, output_blob, opt);
-        NCNN_LOGE("=== CUDA Convolution forward done ===");
+        NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",output_blob.w,output_blob.h,output_blob.d,output_blob.c,output_blob.dims);
+        NCNN_LOGE("  *  CUDA Convolution forward done");
         return 0;
     }
 

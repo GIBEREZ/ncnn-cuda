@@ -7,8 +7,8 @@
 namespace ncnn {
     InnerProduct_cuda::InnerProduct_cuda()
     {
+        one_blob_only = true;
         support_cuda = true;
-        support_inplace = false;
     }
 
     int InnerProduct_cuda::load_param(const ParamDict& pd)
@@ -38,9 +38,9 @@ namespace ncnn {
 
     int InnerProduct_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
-        NCNN_LOGE("=== Running CUDA InnerProduct forward ===");
+        NCNN_LOGE("  *  Running CUDA InnerProduct forward");
         InnerProduct_cuda_forward(input_blob, output_blob, opt);
-        NCNN_LOGE("=== CUDA InnerProduct forward done ===");
+        NCNN_LOGE("  *  CUDA InnerProduct forward done");
         return 0;
     }
 

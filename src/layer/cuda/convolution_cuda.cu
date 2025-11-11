@@ -26,7 +26,7 @@ namespace ncnn {
         cudnnCreateTensorDescriptor(&bias_desc);                    // ´´½¨Æ«ÖÃÕÅÁ¿ÃèÊö·û
         cudnnCreateActivationDescriptor(&activatio_desc);           // ´´½¨¼¤»îº¯Êı²Ù×÷ÃèÊö·û
 
-        // 4.ÅäÖÃÊäÈëshape³ß´çÃèÊö·û
+        // 4.ÅäÖÃÊäÈëÊä³öshape³ß´çÃèÊö·û
         cudnnDataType_t cudnn_dtype;
         if (input_blob.elemsize == 4)
         {
@@ -45,23 +45,31 @@ namespace ncnn {
             return -1;
         }
 
+        // 5.ÅäÖÃÊä³öshape³ß´çÃèÊö·û
+        int out_h = (input_blob.h + pad_top + pad_bottom - dilation_h * (kernel_h - 1) - 1) / stride_h + 1;
+        int out_w = (input_blob.w + pad_left + pad_right - dilation_w * (kernel_w - 1) - 1) / stride_w + 1;
+
         if (input_blob.dims == 1)
         {
+            output_blob.create(out_w, input_blob.elemsize);
             cudnnSetTensor4dDescriptor(input_desc, CUDNN_TENSOR_NCHW,
                                        cudnn_dtype, 1, 1, 1, input_blob.w);
         }
         else if (input_blob.dims == 2)
         {
+            output_blob.create(out_w, out_h, input_blob.elemsize);
             cudnnSetTensor4dDescriptor(input_desc, CUDNN_TENSOR_NCHW,
                                        cudnn_dtype, 1, 1, input_blob.h, input_blob.w);
         }
         else if (input_blob.dims == 3)
         {
+            output_blob.create(out_w, out_h, num_output, input_blob.elemsize);
             cudnnSetTensor4dDescriptor(input_desc, CUDNN_TENSOR_NCHW,
                                        cudnn_dtype, 1, input_blob.c, input_blob.h, input_blob.w);
         }
         else if (input_blob.dims == 4)
         {
+            output_blob.create(out_w, out_h, input_blob.d, num_output, input_blob.elemsize);
             cudnnSetTensor4dDescriptor(input_desc, CUDNN_TENSOR_NCHW,
                                        cudnn_dtype, input_blob.d, input_blob.c, input_blob.h, input_blob.w);
         }
@@ -69,6 +77,13 @@ namespace ncnn {
         {
             return -1;
         }
+
+        cudnnSetTensor4dDescriptor(output_desc,
+            CUDNN_TENSOR_NCHW, cudnn_dtype,
+            input_blob.d,
+            num_output,
+            out_h, out_w
+        );
 
         // 5.ÅäÖÃ¾í»ıºËÃèÊö·û
         cudnnSetFilter4dDescriptor(filter_desc, cudnn_dtype,
@@ -86,16 +101,6 @@ namespace ncnn {
                                         dilation_h, dilation_w,
                                         CUDNN_CROSS_CORRELATION,
                                         cudnn_dtype
-        );
-
-        // 7.ÅäÖÃÊä³öshape³ß´çÃèÊö·û
-        int out_h = (input_blob.h + pad_top + pad_bottom - dilation_h * (kernel_h - 1) - 1) / stride_h + 1;
-        int out_w = (input_blob.w + pad_left + pad_right - dilation_w * (kernel_w - 1) - 1) / stride_w + 1;
-        cudnnSetTensor4dDescriptor(output_desc,
-            CUDNN_TENSOR_NCHW, cudnn_dtype,
-            input_blob.d,
-            num_output,
-            out_h, out_w
         );
 
         // 8.¼ÆËã¹¤×÷¿Õ¼ä´óĞ¡

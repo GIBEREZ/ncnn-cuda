@@ -45,8 +45,8 @@ set(ncnn_SRCS
     ../main.cpp
         layer/cuda/innerproduct_cuda.cpp
         layer/cuda/innerproduct_cuda.h
-        layer/cuda/reshape.cpp
-        layer/cuda/reshape.h
+        layer/cuda/reshape_cuda.cpp
+        layer/cuda/reshape_cuda.h
 )
 
 if(ANDROID)

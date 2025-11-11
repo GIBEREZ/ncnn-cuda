@@ -30,8 +30,9 @@ namespace ncnn {
 
     int ReLU_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
-        NCNN_LOGE("=== Running CUDA ReLU forward ==="); // µ˜ ‘”√
+        NCNN_LOGE("  *  Running CUDA ReLU forward");
         relu_cuda(input_blob, output_blob, input_blob.total());
+        NCNN_LOGE("  *  CUDA ReLU forward done");
         return 0;
     }
 } // namespace ncnn
