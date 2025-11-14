@@ -5,15 +5,16 @@
 #ifndef NCNN_RESHAPE_H
 #define NCNN_RESHAPE_H
 #include "layer.h"
+#include "expression.h"
+#include "reshape.h"
 
 namespace ncnn {
-    class Reshape_cuda : public Layer
+    class Reshape_cuda : public Reshape
     {
     public:
         Reshape_cuda();
         virtual int load_param(const ParamDict& pd);
-        virtual int load_model(const ModelBin& mb);
-        virtual int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
+        virtual int forward(const std::vector<CudaMat>& input_blobs, std::vector<CudaMat>& output_blobs, const Option& opt) const;
     };
 }
 

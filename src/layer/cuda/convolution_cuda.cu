@@ -45,7 +45,6 @@ namespace ncnn {
             return -1;
         }
 
-        // 5.配置输出shape尺寸描述符
         int out_h = (input_blob.h + pad_top + pad_bottom - dilation_h * (kernel_h - 1) - 1) / stride_h + 1;
         int out_w = (input_blob.w + pad_left + pad_right - dilation_w * (kernel_w - 1) - 1) / stride_w + 1;
 
@@ -103,23 +102,23 @@ namespace ncnn {
                                         cudnn_dtype
         );
 
-        // 8.计算工作空间大小
+        // 7.计算工作空间大小
         size_t workspace_bytes = 0;
         cudnnGetConvolutionForwardWorkspaceSize(
             handle, input_desc, filter_desc, conv_desc, output_desc,
             CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM, &workspace_bytes
         );
 
-        // 9.分配工作空间（GPU内存）
+        // 8.分配工作空间（GPU内存）
         void* d_workspace = nullptr;
         if (cudaMalloc(&d_workspace, workspace_bytes) != cudaSuccess) return -1;
 
-        // 10.分配输出张量显存
+        // 9.分配输出张量显存
         output_blob.cstep = alignSize(num_output, 16) * out_h * out_w;
         output_blob.alloc_bytes = output_blob.d * output_blob.cstep * output_blob.elemsize;
         cudaMalloc(&output_blob.data, output_blob.alloc_bytes);
 
-        // 11.执行卷积
+        // 10.执行卷积
         float alpha = 1.0f;
         float beta = 0.0f;
         cudnnConvolutionForward(
@@ -135,7 +134,7 @@ namespace ncnn {
             output_blob.data
         );// 输出描述符+目标内存
 
-        // 13.如果有偏置项，则加上偏置
+        // 11.如果有偏置项，则加上偏置
         if (bias_term == 1)
         {
             cudnnAddTensor(
@@ -149,7 +148,7 @@ namespace ncnn {
             );
         }
 
-        // 14.如果需要激活函数，则进行激活函数
+        // 12.如果需要激活函数，则进行激活函数
         if (activation_type != 0)
         {
             cudnnActivationMode_t mode;
@@ -189,14 +188,14 @@ namespace ncnn {
             );
         }
 
-        // 15.释放工作空间
+        // 13.释放工作空间
         if (d_workspace)
         {
             cudaFree(d_workspace); // 释放之前用 cudaMalloc 分配的 GPU 临时缓冲区
             d_workspace = nullptr; // 避免悬空指针
         }
 
-        // 16.销毁cuDNN描述符与句柄
+        // 14.销毁cuDNN描述符与句柄
         cudnnDestroyTensorDescriptor(input_desc);           // 销毁输入张量描述符
         cudnnDestroyTensorDescriptor(output_desc);          // 销毁输出张量描述符
         cudnnDestroyTensorDescriptor(bias_desc);            // 销毁 bias 张量描述符

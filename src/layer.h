@@ -107,6 +107,7 @@ public:
     // upload weight blob from host to NVIDIA-CUDA device
     virtual int upload_model(const Option& _opt);
     virtual int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
+    virtual int forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const;
     virtual int forward_inplace(const CudaMat& input_blob, const Option& opt) const;
 #endif
 

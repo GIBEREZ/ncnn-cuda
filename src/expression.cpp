@@ -554,7 +554,7 @@ int eval_list_expression(const std::string& expr, const std::vector<Mat>& blobs,
         outlist.push_back(size);
     }
 
-    // NCNN_LOGE("shape %s = %d %d", expr.c_str(), list[0], list[1]);
+    //NCNN_LOGE("shape %s = %d %d", expr.c_str(), list[0], list[1]);
 
     return 0;
 }

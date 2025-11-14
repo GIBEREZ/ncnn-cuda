@@ -365,6 +365,11 @@ public:
     // Input a tensor and output a tensor of the same shape to GPU memory
     void create_like(const Mat& mat);
     void create_like(const CudaMat& cuda_mat);
+    // Change shape (The returned result must be used)
+    void reshape(int w, CudaMat& m) const;
+    void reshape(int w, int h, CudaMat& m) const;
+    void reshape(int w, int h, int c, CudaMat& m) const;
+    void reshape(int w, int h, int d, int c, CudaMat& m) const;
 
     bool empty() const;
     size_t total() const;
@@ -382,7 +387,6 @@ public:
     int dims;           // 维度
     size_t cstep;       // 在C通道对齐
     size_t alloc_bytes; // 分配字节
-    int elempack;       // 表示一个 通道/元素 的打包数量
 };
 #endif
 

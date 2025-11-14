@@ -817,7 +817,38 @@ int NetPrivate::do_forward_layer(const Layer* layer, std::vector<CudaMat>& blob_
     }
     else // 多个blob输入情况
     {
+        std::vector<CudaMat> bottom_blobs(layer->bottoms.size());
+        for (size_t i = 0; i < layer->bottoms.size(); i++)
+        {
+            int bottom_blob_index = layer->bottoms[i];
+            CudaMat& bottom_blob_ref = blob_CudaMats[bottom_blob_index];
+            bottom_blobs[i].release();
+            if (bottom_blob_ref.empty())
+            {
+                NCNN_LOGE("Error: bottom blob[%d] is empty for layer %s\n",
+                        static_cast<int>(bottom_blob_index), layer->name.c_str());
+                return -1;
+            }
 
+            bottom_blobs[i] = bottom_blob_ref;
+            // 注：在CUDA核函数里面手动做内存对齐，不需要再利用打包机制
+            //int ret = convert_layout(bottom_blobs[i], layer, opt);
+        }
+
+        std::vector<CudaMat> top_blobs(layer->tops.size());
+        int ret = layer->forward(bottom_blobs, top_blobs, opt);
+        if (ret != 0)
+            return ret;
+        for (size_t i = 0; i < layer->tops.size(); i++)
+        {
+            int top_blob_index = layer->tops[i];
+            const CudaMat& top_blob = top_blobs[i];
+            blob_CudaMats[top_blob_index].create_like(top_blob);
+            cudaMemcpy(blob_CudaMats[top_blob_index].data,
+                       top_blob.data,
+                       top_blob.total() * top_blob.elemsize,
+                       cudaMemcpyDeviceToDevice);
+        }
     }
 
     return 0;

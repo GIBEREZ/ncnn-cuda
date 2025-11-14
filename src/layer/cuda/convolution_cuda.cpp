@@ -71,6 +71,7 @@ namespace ncnn {
         NCNN_LOGE("  *  Running CUDA Convolution forward");
         Convolution_cuda_forward(input_blob, output_blob, opt);
         NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",output_blob.w,output_blob.h,output_blob.d,output_blob.c,output_blob.dims);
+        if (output_blob.empty() || output_blob.gpu_data == nullptr) return -100;
         NCNN_LOGE("  *  CUDA Convolution forward done");
         return 0;
     }

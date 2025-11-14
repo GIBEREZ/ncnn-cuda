@@ -114,6 +114,12 @@ int Layer::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option
     return 0;
 }
 
+int Layer::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const
+{
+    return 0;
+}
+
+
 int Layer::forward_inplace(const CudaMat& input_blob, const Option& opt) const
 {
     if (!support_inplace)
