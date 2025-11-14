@@ -345,6 +345,7 @@ set(pnnx_pass_level3_SRCS
 )
 
 set(pnnx_pass_level4_SRCS
+    pass_level4/attribute_pooling.cpp
     pass_level4/canonicalize.cpp
     pass_level4/dead_code_elimination.cpp
     pass_level4/fuse_custom_op.cpp
@@ -582,6 +583,7 @@ set(pnnx_pass_ncnn_SRCS
     pass_ncnn/nn_UpsamplingBilinear2d.cpp
     pass_ncnn/nn_UpsamplingNearest2d.cpp
     pass_ncnn/nn_ZeroPad2d.cpp
+    pass_ncnn/Tensor_expand.cpp
     pass_ncnn/Tensor_permute.cpp
     pass_ncnn/Tensor_reshape.cpp
     pass_ncnn/Tensor_reshape_as.cpp
