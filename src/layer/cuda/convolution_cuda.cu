@@ -8,25 +8,25 @@
 namespace ncnn {
     int Convolution_cuda::Convolution_cuda_forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
-        // 1. 创建 cuDNN 句柄
+        // 1. Create cuDNN handle
         cudnnHandle_t handle;
         if (cudnnCreate(&handle) != CUDNN_STATUS_SUCCESS) return -1;
 
-        // 2. 创建张量描述符（输入、权重、输出）
+        // 2. Create tensor descriptors (input, weight, output)
         cudnnTensorDescriptor_t input_desc, output_desc, bias_desc;
         cudnnFilterDescriptor_t filter_desc;
         cudnnConvolutionDescriptor_t conv_desc;
         cudnnActivationDescriptor_t activatio_desc;
 
-        // 3. 初始化这些描述符
-        cudnnCreateTensorDescriptor(&input_desc);                   // 创建输入张量描述符
-        cudnnCreateTensorDescriptor(&output_desc);                  // 创建输出张量描述符
-        cudnnCreateFilterDescriptor(&filter_desc);                  // 创建卷积核描述符
-        cudnnCreateConvolutionDescriptor(&conv_desc);               // 创建卷积操作描述符
-        cudnnCreateTensorDescriptor(&bias_desc);                    // 创建偏置张量描述符
-        cudnnCreateActivationDescriptor(&activatio_desc);           // 创建激活函数操作描述符
+        // 3. Initialize these descriptors
+        cudnnCreateTensorDescriptor(&input_desc);                   // Create input tensor descriptor
+        cudnnCreateTensorDescriptor(&output_desc);                  // Create output tensor descriptor
+        cudnnCreateFilterDescriptor(&filter_desc);                  // Create filter descriptor
+        cudnnCreateConvolutionDescriptor(&conv_desc);               // Create convolution descriptor
+        cudnnCreateTensorDescriptor(&bias_desc);                    // Create bias tensor descriptor
+        cudnnCreateActivationDescriptor(&activatio_desc);           // Create activation function descriptor
 
-        // 4.配置输入输出shape尺寸描述符
+        // 4. Set input/output shape descriptors
         cudnnDataType_t cudnn_dtype;
         if (input_blob.elemsize == 4)
         {
@@ -84,7 +84,7 @@ namespace ncnn {
             out_h, out_w
         );
 
-        // 5.配置卷积核描述符
+        // 5. Set filter descriptor
         cudnnSetFilter4dDescriptor(filter_desc, cudnn_dtype,
                                    CUDNN_TENSOR_NCHW,
                                    num_output,
@@ -93,7 +93,7 @@ namespace ncnn {
                                    kernel_w
         );
 
-        // 6.配置卷积参数（padding、stride、dilation）,cuDNN本身不支持非对称padding
+        // 6. Set convolution parameters (padding, stride, dilation); cuDNN does not support asymmetric padding
         cudnnSetConvolution2dDescriptor(conv_desc,
                                         std::max(pad_top, pad_bottom), std::max(pad_left, pad_right),
                                         stride_h, stride_w,
@@ -102,53 +102,48 @@ namespace ncnn {
                                         cudnn_dtype
         );
 
-        // 7.计算工作空间大小
+        // 7. Compute workspace size
         size_t workspace_bytes = 0;
         cudnnGetConvolutionForwardWorkspaceSize(
             handle, input_desc, filter_desc, conv_desc, output_desc,
             CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM, &workspace_bytes
         );
 
-        // 8.分配工作空间（GPU内存）
+        // 8. Allocate workspace (GPU memory)
         void* d_workspace = nullptr;
         if (cudaMalloc(&d_workspace, workspace_bytes) != cudaSuccess) return -1;
 
-        // 9.分配输出张量显存
-        output_blob.cstep = alignSize(num_output, 16) * out_h * out_w;
-        output_blob.alloc_bytes = output_blob.d * output_blob.cstep * output_blob.elemsize;
-        cudaMalloc(&output_blob.data, output_blob.alloc_bytes);
-
-        // 10.执行卷积
+        // 9. Execute convolution
         float alpha = 1.0f;
         float beta = 0.0f;
         cudnnConvolutionForward(
-            handle,                               // cudnn句柄
-            &alpha,                               // 输入缩放系数，1.0f表示使用原输入
-            input_desc, input_blob.data,    // 输入描述符+数据
-            filter_desc, weight_blob,          // 卷积核描述符+数据（需提前上传GPU）
-            conv_desc, CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM,  // 卷积描述符+算法
+            handle,                               // cuDNN handle
+            &alpha,                               // input scale factor, 1.0 means use original input
+            input_desc, input_blob.gpu_data,// input descriptor + data
+            filter_desc, weight_blob.gpu_data,    // filter descriptor + data (already uploaded to GPU)
+            conv_desc, CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM,  // convolution descriptor + algorithm
             d_workspace,
-            workspace_bytes,                      // 临时工作空间
-            &beta,                                // 输出缩放系数，0.0f表示直接覆盖原输入
+            workspace_bytes,                      // temporary workspace
+            &beta,                                // output scale factor, 0.0 means overwrite
             output_desc,
-            output_blob.data
-        );// 输出描述符+目标内存
+            output_blob.gpu_data                  // output descriptor + target memory
+        );
 
-        // 11.如果有偏置项，则加上偏置
+        // 10. Add bias if bias_term == 1
         if (bias_term == 1)
         {
             cudnnAddTensor(
                 handle,
                 &alpha,
                 bias_desc,
-                bias_blob.data,
+                bias_blob.gpu_data,
                 &beta,
                 output_desc,
-                output_blob.data
+                output_blob.gpu_data
             );
         }
 
-        // 12.如果需要激活函数，则进行激活函数
+        // 11. Apply activation function if needed
         if (activation_type != 0)
         {
             cudnnActivationMode_t mode;
@@ -157,12 +152,12 @@ namespace ncnn {
             case 1: // ReLU
                 mode = CUDNN_ACTIVATION_RELU;
                 break;
-            case 2: // LeakyReLU -> 用 ELU 近似
+            case 2: // LeakyReLU -> approximate with ELU
                 mode = CUDNN_ACTIVATION_ELU;
                 break;
             // case 3: // Clip -> Clipped ReLU
             //     mode = CUDNN_ACTIVATION_CLIPPED_RELU;
-            //     relu_clip = 6.0f; // 可以自定义上限，例如 6
+            //     relu_clip = 6.0f; // optional upper limit
             //     break;
             case 4: // Sigmoid
                 mode = CUDNN_ACTIVATION_SIGMOID;
@@ -181,29 +176,30 @@ namespace ncnn {
                 activatio_desc,
                 &alpha,
                 output_desc,
-                output_blob.data,
+                output_blob.gpu_data,
                 &beta,
                 output_desc,
-                output_blob.data
+                output_blob.gpu_data
             );
         }
 
-        // 13.释放工作空间
+        // 15. Free workspace
         if (d_workspace)
         {
-            cudaFree(d_workspace); // 释放之前用 cudaMalloc 分配的 GPU 临时缓冲区
-            d_workspace = nullptr; // 避免悬空指针
+            cudaFree(d_workspace); // Free previously allocated GPU temporary buffer
+            d_workspace = nullptr; // Avoid dangling pointer
         }
 
-        // 14.销毁cuDNN描述符与句柄
-        cudnnDestroyTensorDescriptor(input_desc);           // 销毁输入张量描述符
-        cudnnDestroyTensorDescriptor(output_desc);          // 销毁输出张量描述符
-        cudnnDestroyTensorDescriptor(bias_desc);            // 销毁 bias 张量描述符
-        cudnnDestroyFilterDescriptor(filter_desc);          // 销毁卷积核描述符
-        cudnnDestroyConvolutionDescriptor(conv_desc);       // 销毁卷积描述符
-        cudnnDestroyActivationDescriptor(activatio_desc);   // 销毁激活描述符（如果使用了）
-        cudnnDestroy(handle);                               // 销毁 cuDNN 上下文句柄
+        // 13. Destroy cuDNN descriptors and handle
+        cudnnDestroyTensorDescriptor(input_desc);           // Destroy input tensor descriptor
+        cudnnDestroyTensorDescriptor(output_desc);          // Destroy output tensor descriptor
+        cudnnDestroyTensorDescriptor(bias_desc);            // Destroy bias descriptor
+        cudnnDestroyFilterDescriptor(filter_desc);          // Destroy filter descriptor
+        cudnnDestroyConvolutionDescriptor(conv_desc);       // Destroy convolution descriptor
+        cudnnDestroyActivationDescriptor(activatio_desc);   // Destroy activation descriptor (if used)
+        cudnnDestroy(handle);                               // Destroy cuDNN handle
 
         return 0;
+
     }
 }

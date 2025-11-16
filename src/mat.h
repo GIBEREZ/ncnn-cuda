@@ -351,9 +351,13 @@ public:
     CudaMat(int w, int h, void* data, size_t elemsize);
     CudaMat(int w, int h, int c, void* data, size_t elemsize);
     CudaMat(int w, int h, int d, int c, void* data, size_t elemsize);
-    // copy
-    CudaMat(const Mat& mat);
-    CudaMat(const CudaMat& cuda_mat);
+
+    explicit CudaMat(const Mat& mat);
+
+    CudaMat(const CudaMat& other);
+    CudaMat& CudaMat::operator=(const CudaMat& other);
+    CudaMat(CudaMat&& other) noexcept;
+
     // release
     ~CudaMat();
     void release();
@@ -366,10 +370,10 @@ public:
     void create_like(const Mat& mat);
     void create_like(const CudaMat& cuda_mat);
     // Change shape (The returned result must be used)
-    void reshape(int w, CudaMat& m) const;
-    void reshape(int w, int h, CudaMat& m) const;
-    void reshape(int w, int h, int c, CudaMat& m) const;
-    void reshape(int w, int h, int d, int c, CudaMat& m) const;
+    CudaMat reshape(int w) const;
+    CudaMat reshape(int w, int h) const;
+    CudaMat reshape(int w, int h, int c) const;
+    CudaMat reshape(int w, int h, int d, int c) const;
 
     bool empty() const;
     size_t total() const;
@@ -379,14 +383,15 @@ public:
     // Precision selection 4=float32/int32; 2 = float16; 1 = int8/uint8; 0 = empty
     size_t elemsize;
     // Data pointer in NVIDIA CUDA
-    void* gpu_data;     // gpu指针数据
-    int w;              // 宽度
-    int h;              // 高度
-    int d;              // 深度
-    int c;              // 通道
-    int dims;           // 维度
-    size_t cstep;       // 在C通道对齐
-    size_t alloc_bytes; // 分配字节
+    void* gpu_data;     // gpu鎸囬拡鏁版嵁
+    int w;              // 瀹藉害
+    int h;              // 楂樺害
+    int d;              // 娣卞害
+    int c;              // 閫氶亾
+    int dims;           // 缁村害
+    size_t cstep;       // 鍦–閫氶亾瀵归綈
+    size_t alloc_bytes; // 鍒嗛厤瀛楄妭
+    int* refcount;      // 寮曠敤璁℃暟
 };
 #endif
 

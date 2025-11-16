@@ -10,28 +10,46 @@ namespace ncnn {
     [[nodiscard]] std::vector<cudaDeviceProp> get_device_properties()
     {
         int device_count = 0;
-        cudaGetDeviceCount(&device_count);                    // 获取系统中可用 GPU 数量
-        NCNN_LOGE("CUDA devices found: %d", device_count);     // 打印 GPU 数量
+        cudaGetDeviceCount(&device_count);
+        NCNN_LOGE("CUDA devices found: %d", device_count);
 
         std::vector<cudaDeviceProp> CudaDevices;
 
         for (int i = 0; i < device_count; i++)
         {
             cudaDeviceProp prop{};
-            cudaGetDeviceProperties(&prop, i);               // 获取第 i 个 GPU 的属性
+            cudaGetDeviceProperties(&prop, i);
             NCNN_LOGE("=== Obtain GPU device status ===");
-            NCNN_LOGE("Device %d: %s", i, prop.name);        // 打印 GPU 名称
-            NCNN_LOGE("  Compute capability: %d.%d", prop.major, prop.minor); // 计算能力
-            NCNN_LOGE("  Total global memory: %.2f GB", prop.totalGlobalMem / 1024.0 / 1024.0 / 1024.0); // 显存大小
-            NCNN_LOGE("  Multiprocessors: %d", prop.multiProcessorCount);     // 核心数量
-            NCNN_LOGE("  Max threads per block: %d", prop.maxThreadsPerBlock);// 每 block 最大线程数
-            NCNN_LOGE("  Max threads per multiprocessor: %d", prop.maxThreadsPerMultiProcessor);// 每流式多处理器最大线程数
-            NCNN_LOGE("  Warp size: %d", prop.warpSize);      // warp 大小
+            NCNN_LOGE("Device %d: %s", i, prop.name);
+            NCNN_LOGE("  Compute capability: %d.%d", prop.major, prop.minor);
+            NCNN_LOGE("  Total global memory: %.2f GB", prop.totalGlobalMem / 1024.0 / 1024.0 / 1024.0);
+            NCNN_LOGE("  Multiprocessors: %d", prop.multiProcessorCount);
+            NCNN_LOGE("  Max threads per block: %d", prop.maxThreadsPerBlock);
+            NCNN_LOGE("  Max threads per multiprocessor: %d", prop.maxThreadsPerMultiProcessor);
+            NCNN_LOGE("  Warp size: %d", prop.warpSize);
             NCNN_LOGE("=====================\n");
             CudaDevices.push_back(prop);
         }
 
         return CudaDevices;
+    }
+
+    int printf_CudaMat_gpu_data(const CudaMat& input_blob)
+    {
+        float* host_back = (float*)malloc(input_blob.w * input_blob.h * sizeof(float));
+        cudaMemcpy(host_back, input_blob.gpu_data, input_blob.w * input_blob.h * sizeof(float), cudaMemcpyDeviceToHost);
+        for (int y = 0; y < input_blob.h; y++)
+        {
+            for (int x = 0; x < input_blob.w; x++)
+            {
+                float v = host_back[y * input_blob.w + x];
+                char buf[32];
+                int len = snprintf(buf, sizeof(buf), "%3.0f ", v);
+                fwrite(buf, 1, len, stderr);
+            }
+            fwrite("\n", 1, 1, stderr);
+        }
+        return 0;
     }
 
     CudaCompute::CudaCompute(int DeviceIndex)
@@ -45,18 +63,31 @@ namespace ncnn {
 
     }
 
-    void CudaCompute::Upload_Device(const Mat& src, CudaMat& dst, const Option& option)
+    void CudaCompute::Upload_Device(const Mat& src, CudaMat& dst)
     {
         if (src.empty()) return;
-        size_t bytes = src.total() * src.elemsize;                          // 计算总字节数
-        cudaMemcpy(dst.data, src.data, bytes, cudaMemcpyHostToDevice); // CPU→GPU 拷贝
+        size_t bytes = src.total() * src.elemsize;
+        cudaMemcpy(dst.data, src.data, bytes, cudaMemcpyHostToDevice);
     }
 
-    void CudaCompute::Download_Device(const CudaMat& src, Mat& dst, const Option& option)
+    void CudaCompute::Download_Device(const CudaMat& src, Mat& dst)
     {
-        if (src.empty()) return;
-        size_t bytes = src.total() * src.elemsize;                          // 计算总字节数
-        cudaMemcpy(dst.data, src.data, bytes, cudaMemcpyDeviceToHost); // 同步拷贝：GPU→CPU
+        if (src.empty() || src.gpu_data == nullptr)
+            NCNN_LOGE("download device is null");
+        dst.create_like(src);
+        float* data = (float*)malloc(src.total() * src.elemsize);
+        cudaError_t err = cudaMemcpy(data, src.gpu_data, src.alloc_bytes, cudaMemcpyDeviceToHost);
+        if (err != cudaSuccess)
+        {
+            NCNN_LOGE("===CudaCompute::Download_Device()=== cudaMemcpy cudaMemcpyDeviceToHost failed: %s", cudaGetErrorString(err));
+        }
+        cudaDeviceSynchronize();
+        NCNN_LOGE("Host data (after copy back):");
+        for (int i = 0; i < src.w; i++)
+        {
+            fprintf(stderr, "%.1f ", data[i]);
+        }
+        fprintf(stderr, "\n");
     }
 }
 

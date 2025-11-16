@@ -241,14 +241,11 @@ int NetPrivate::forward_layer(int layer_index, std::vector<CudaMat>& blob_CudaMa
 {
     int ret = 0;
 
-    // 1.获取所有layer层
     const Layer* layer = layers[layer_index];
 
-    // 2.如果是输入层，直接返回，不进行计算
     if (layer->typeindex == LayerType::Input)
         return 0;
 
-    // 3.遍历当前层的所有 bottom blobs, 并执行推理步骤
     for (int bottom_blob_index : layer->bottoms)
     {
         if (blob_CudaMats[bottom_blob_index].dims == 0 && blob_CudaMats[bottom_blob_index].dims == 0)
@@ -787,11 +784,11 @@ int NetPrivate::do_forward_layer(const Layer* layer, std::vector<Mat>& blob_mats
 #include "cuda_runtime_api.h"
 int NetPrivate::do_forward_layer(const Layer* layer, std::vector<CudaMat>& blob_CudaMats, const Option& opt) const
 {
-    // 如果是一个blob输入一个blob输出
+    // 濡傛灉鏄竴涓猙lob杈撳叆涓�涓猙lob杈撳嚭
     if (layer->one_blob_only)
     {
-        int bottom_blob_index = layer->bottoms[0]; // 获取输入 blob 索引
-        int top_blob_index = layer->tops[0];       // 获取输出 blob 索引
+        int bottom_blob_index = layer->bottoms[0]; // 鑾峰彇杈撳叆 blob 绱㈠紩
+        int top_blob_index = layer->tops[0];       // 鑾峰彇杈撳嚭 blob 绱㈠紩
 
         CudaMat& bottom_blob = blob_CudaMats[bottom_blob_index];
         CudaMat top_blob;
@@ -802,20 +799,20 @@ int NetPrivate::do_forward_layer(const Layer* layer, std::vector<CudaMat>& blob_
             if (ret != 0)
                 return ret;
 
-            blob_CudaMats[top_blob_index] = bottom_blob; // 存储输出 blob
+            blob_CudaMats[top_blob_index] = bottom_blob; // 瀛樺偍杈撳嚭 blob
             blob_CudaMats[bottom_blob_index].release();
         }
         else
         {
-            int ret = layer->forward(bottom_blob, top_blob, opt); // 正常 forward
+            int ret = layer->forward(bottom_blob, top_blob, opt); // 姝ｅ父 forward
             if (ret != 0)
                 return ret;
 
             blob_CudaMats[top_blob_index].create_like(top_blob);
-            cudaMemcpy(blob_CudaMats[top_blob_index].data, top_blob.data,top_blob.total() * sizeof(top_blob.elemsize), cudaMemcpyDeviceToDevice);
+            cudaMemcpy(blob_CudaMats[top_blob_index].gpu_data, top_blob.gpu_data,top_blob.total() * sizeof(top_blob.elemsize), cudaMemcpyDeviceToDevice);
         }
     }
-    else // 多个blob输入情况
+    else // 澶氫釜blob杈撳叆鎯呭喌
     {
         std::vector<CudaMat> bottom_blobs(layer->bottoms.size());
         for (size_t i = 0; i < layer->bottoms.size(); i++)
@@ -823,7 +820,7 @@ int NetPrivate::do_forward_layer(const Layer* layer, std::vector<CudaMat>& blob_
             int bottom_blob_index = layer->bottoms[i];
             CudaMat& bottom_blob_ref = blob_CudaMats[bottom_blob_index];
             bottom_blobs[i].release();
-            if (bottom_blob_ref.empty())
+            if (bottom_blob_ref.empty() || bottom_blob_ref.gpu_data == nullptr)
             {
                 NCNN_LOGE("Error: bottom blob[%d] is empty for layer %s\n",
                         static_cast<int>(bottom_blob_index), layer->name.c_str());
@@ -831,7 +828,6 @@ int NetPrivate::do_forward_layer(const Layer* layer, std::vector<CudaMat>& blob_
             }
 
             bottom_blobs[i] = bottom_blob_ref;
-            // 注：在CUDA核函数里面手动做内存对齐，不需要再利用打包机制
             //int ret = convert_layout(bottom_blobs[i], layer, opt);
         }
 
@@ -844,8 +840,8 @@ int NetPrivate::do_forward_layer(const Layer* layer, std::vector<CudaMat>& blob_
             int top_blob_index = layer->tops[i];
             const CudaMat& top_blob = top_blobs[i];
             blob_CudaMats[top_blob_index].create_like(top_blob);
-            cudaMemcpy(blob_CudaMats[top_blob_index].data,
-                       top_blob.data,
+            cudaMemcpy(blob_CudaMats[top_blob_index].gpu_data,
+                       top_blob.gpu_data,
                        top_blob.total() * top_blob.elemsize,
                        cudaMemcpyDeviceToDevice);
         }
@@ -1447,18 +1443,14 @@ int Net::load_param(const DataReader& dr)
     d->update_input_output_indexes();
     d->update_input_output_names();
 
-    // ===== 打印 layer 信息用于调试 CUDA layer =====
     NCNN_LOGE("=== Loaded Layers ===");
     for (size_t i = 0; i < d->layers.size(); i++)
     {
         Layer* layer = d->layers[i];
         if (!layer) continue;
-
-        // 打印 layer 名称和类型
         NCNN_LOGE("layer %zu: type=%s, name=%s", i, layer->type.c_str(), layer->name.c_str());
 
 #if NCNN_CUDA
-        // 如果你的 CUDA layer 类里加了 support_cuda 标志
         if (layer->support_cuda)
             NCNN_LOGE(" -> this layer is CUDA version");
 #endif
@@ -2482,6 +2474,8 @@ int Extractor::extract(int blob_index, Mat& feat, int type)
         CudaCompute CUDA(0);
         CudaMat gpu_Mat;
         ret = extract(blob_index, gpu_Mat, CUDA);
+        CUDA.Download_Device(d->blob_Cudamats[blob_index], feat);
+        return ret;
     }
 #endif
 

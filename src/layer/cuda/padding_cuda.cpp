@@ -19,11 +19,11 @@ namespace ncnn{
     int Padding_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
         Option option = opt;
-        int c = input_blob.c;                   // ÊäÈëÍ¨µÀÊı
-        int h = input_blob.h;                   // ÊäÈë¸ß¶È
-        int w = input_blob.w;                   // ÊäÈë¿í¶È
-        size_t elemsize = input_blob.elemsize;  // ¾«¶È
-        int elempack = input_blob.elempack;     // ´ò°üÊıÁ¿
+        int c = input_blob.c;                   // è¾“å…¥é€šé“æ•°
+        int h = input_blob.h;                   // è¾“å…¥é«˜åº¦
+        int w = input_blob.w;                   // è¾“å…¥å®½åº¦
+        size_t elemsize = input_blob.elemsize;  // ç²¾åº¦
+        int elempack = input_blob.elempack;     // æ‰“åŒ…æ•°é‡
 
         int outw = 0;
         int outh = 0;

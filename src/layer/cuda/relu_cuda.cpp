@@ -10,11 +10,8 @@
 namespace ncnn {
     ReLU_cuda::ReLU_cuda()
     {
-        // 是否该层只处理单个输入blob（张量）
         one_blob_only = true;
-        // 是否支持原地计算
         support_inplace = true;
-        // 该层支持cuda
         support_cuda = true;
     }
     int ReLU_cuda::load_param(const ParamDict& pd)
@@ -32,6 +29,8 @@ namespace ncnn {
     {
         NCNN_LOGE("  *  Running CUDA ReLU forward");
         relu_cuda(input_blob, output_blob, input_blob.total());
+        NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",output_blob.w,output_blob.h,output_blob.d,output_blob.c,output_blob.dims);
+        if (output_blob.empty() || output_blob.gpu_data == nullptr) NCNN_LOGE("  *  output blob gpu_data == nullptr");
         NCNN_LOGE("  *  CUDA ReLU forward done");
         return 0;
     }

@@ -45,7 +45,7 @@ namespace ncnn {
         weight_blob = CudaMat(mb.load(weight_data_size, 0));
         if (weight_blob.empty())
         {
-            NCNN_LOGE("===Convolution_cuda::load_model(const ModelBin& mb) º”‘ÿweight_blob=== weight_blob.empty() failed");
+            NCNN_LOGE("===Convolution_cuda::load_model(const ModelBin& mb) load weight_blob=== weight_blob.empty() failed");
             return -100;
         }
 
@@ -54,7 +54,7 @@ namespace ncnn {
             bias_blob = CudaMat(mb.load(num_output, 0));
             if (bias_blob.empty())
             {
-                NCNN_LOGE("===Convolution_cuda::load_model(const ModelBin& mb) º”‘ÿbias_blob=== bias_blob.empty() failed");
+                NCNN_LOGE("===Convolution_cuda::load_model(const ModelBin& mb) load bias_blob=== bias_blob.empty() failed");
                 return -100;
             }
         }
@@ -71,7 +71,7 @@ namespace ncnn {
         NCNN_LOGE("  *  Running CUDA Convolution forward");
         Convolution_cuda_forward(input_blob, output_blob, opt);
         NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",output_blob.w,output_blob.h,output_blob.d,output_blob.c,output_blob.dims);
-        if (output_blob.empty() || output_blob.gpu_data == nullptr) return -100;
+        if (output_blob.empty() || output_blob.gpu_data == nullptr) NCNN_LOGE("  *  output blob gpu_data == nullptr");
         NCNN_LOGE("  *  CUDA Convolution forward done");
         return 0;
     }

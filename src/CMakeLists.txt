@@ -47,6 +47,8 @@ set(ncnn_SRCS
         layer/cuda/innerproduct_cuda.h
         layer/cuda/reshape_cuda.cpp
         layer/cuda/reshape_cuda.h
+        layer/cuda/softmax_cuda.cpp
+        layer/cuda/softmax_cuda.h
 )
 
 if(ANDROID)
@@ -395,39 +397,39 @@ if(NCNN_CUDA)
         endif()
     endif()
 
-    # ×¢²áCUDA lib£¬²¢¶ÔËùÓÐÏà¹ØµÄ´úÂë±àÒë³Élib
+    # ×¢ï¿½ï¿½CUDA libï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ØµÄ´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½lib
     if(CUDA_FOUND OR CUDAToolkit_FOUND)
-        # ¸øËùÓÐ target Ìí¼Óºê¶¨Òå NCNN_CUDA=1£¬¸æËß±àÒëÆ÷ÆôÓÃ CUDA Ïà¹Ø´úÂë
+        # ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ target ï¿½ï¿½Óºê¶¨ï¿½ï¿½ NCNN_CUDA=1ï¿½ï¿½ï¿½ï¿½ï¿½ß±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ CUDA ï¿½ï¿½Ø´ï¿½ï¿½ï¿½
         add_compile_definitions(NCNN_CUDA=1)
         list(APPEND ncnn_SRCS_CUDA "command.cu")
         add_library(ncnn_cuda_lib STATIC ${ncnn_SRCS_CUDA})
         set_target_properties(ncnn_cuda_lib PROPERTIES
-                # ÆôÓÃ CUDA ¿É·ÖÀë±àÒë£¨Separable Compilation£©
-                # ÔÊÐí¶à¸ö .cu ÎÄ¼þ·Ö±ð±àÒë³ÉÖÐ¼ä¶ÔÏó£¬ÔÙÔÚÁ´½Ó½×¶Î×éºÏ³É¿â
-                # ¶ÔÓÚ°üº¬¶à¸ö kernel µÄ´óÐÍÏîÄ¿·Ç³£ÖØÒª
+                # ï¿½ï¿½ï¿½ï¿½ CUDA ï¿½É·ï¿½ï¿½ï¿½ï¿½ï¿½ë£¨Separable Compilationï¿½ï¿½
+                # ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ .cu ï¿½Ä¼ï¿½ï¿½Ö±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó½×¶ï¿½ï¿½ï¿½Ï³É¿ï¿½
+                # ï¿½ï¿½ï¿½Ú°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ kernel ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿ï¿½Ç³ï¿½ï¿½ï¿½Òª
                 CUDA_SEPARABLE_COMPILATION ON
-                # Ö¸¶¨Á´½ÓÆ÷Ê¹ÓÃÄ¬ÈÏ CUDA Á´½ÓÆ÷
-                # ±£Ö¤Éú³ÉµÄ¾²Ì¬¿â»ò¹²Ïí¿âÄÜÕýÈ·Á´½Ó C++ ÒÀÀµ
+                # Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½Ä¬ï¿½ï¿½ CUDA ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+                # ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ÉµÄ¾ï¿½Ì¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½ C++ ï¿½ï¿½ï¿½ï¿½
                 LINKER_LANGUAGE CXX
-                # Ö¸¶¨Ä¿±ê GPU ¼Ü¹¹£¨SM °æ±¾£©
-                # sm_50¡¢sm_60¡¢sm_75¡¢sm_80¡¢sm_85 ·Ö±ð¶ÔÓ¦²»Í¬ NVIDIA GPU
-                # CMake »áÎªÕâÐ©¼Ü¹¹Éú³É¶ÔÓ¦µÄ PTX/SASS ´úÂë
+                # Ö¸ï¿½ï¿½Ä¿ï¿½ï¿½ GPU ï¿½Ü¹ï¿½ï¿½ï¿½SM ï¿½æ±¾ï¿½ï¿½
+                # sm_50ï¿½ï¿½sm_60ï¿½ï¿½sm_75ï¿½ï¿½sm_80ï¿½ï¿½sm_85 ï¿½Ö±ï¿½ï¿½Ó¦ï¿½ï¿½Í¬ NVIDIA GPU
+                # CMake ï¿½ï¿½Îªï¿½ï¿½Ð©ï¿½Ü¹ï¿½ï¿½ï¿½ï¿½É¶ï¿½Ó¦ï¿½ï¿½ PTX/SASS ï¿½ï¿½ï¿½ï¿½
                 CUDA_ARCHITECTURES 50 60 75 80 85
         )
         target_include_directories(ncnn_cuda_lib
                 PUBLIC
-                # ±àÒëÊ±Í·ÎÄ¼þÂ·¾¶£ºµ±Ç°Ô´´úÂëÄ¿Â¼
+                # ï¿½ï¿½ï¿½ï¿½Ê±Í·ï¿½Ä¼ï¿½Â·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°Ô´ï¿½ï¿½ï¿½ï¿½Ä¿Â¼
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-                # °²×°ºóÍ·ÎÄ¼þÂ·¾¶£º°²×°µ½ include/ncnn ÏÂ
+                # ï¿½ï¿½×°ï¿½ï¿½Í·ï¿½Ä¼ï¿½Â·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½ include/ncnn ï¿½ï¿½
                 $<INSTALL_INTERFACE:include/ncnn>
-                # ±àÒëÊ±Í·ÎÄ¼þÂ·¾¶£ºµ±Ç°¶þ½øÖÆÄ¿Â¼£¬Í¨³£´æ·ÅÉú³ÉµÄÍ·ÎÄ¼þ
+                # ï¿½ï¿½ï¿½ï¿½Ê±Í·ï¿½Ä¼ï¿½Â·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¿Â¼ï¿½ï¿½Í¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½Í·ï¿½Ä¼ï¿½
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                 PRIVATE
-                # Ë½ÓÐÍ·ÎÄ¼þÂ·¾¶£¬½ö ncnn_cuda_lib ×ÔÉíÊ¹ÓÃ£¬²»»á´«µÝ¸øÒÀÀµËüµÄ target
+                # Ë½ï¿½ï¿½Í·ï¿½Ä¼ï¿½Â·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ncnn_cuda_lib ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½Ã£ï¿½ï¿½ï¿½ï¿½á´«ï¿½Ý¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ target
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/layer>
         )
         set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-        # ¹«¿ª CUDA Í·ÎÄ¼þÂ·¾¶¸øËùÓÐÊ¹ÓÃ ncnn µÄÄ¿±ê
+        # ï¿½ï¿½ï¿½ï¿½ CUDA Í·ï¿½Ä¼ï¿½Â·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½ ncnn ï¿½ï¿½Ä¿ï¿½ï¿½
         if (DEFINED CUDAToolkit_INCLUDE_DIRS)
             target_include_directories(ncnn PUBLIC ${CUDAToolkit_INCLUDE_DIRS})
         elseif (DEFINED CUDA_INCLUDE_DIRS)

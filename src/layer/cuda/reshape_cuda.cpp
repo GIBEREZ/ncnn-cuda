@@ -28,7 +28,7 @@ namespace ncnn {
         if (w == -233)
             ndim = 0;
 
-        shape_expr = pd.get(6, ""); // Ä¬ÈÏ¿Õ×Ö·û´®
+        shape_expr = pd.get(6, ""); // é»˜è®¤ç©ºå­—ç¬¦ä¸²
 
         if (!shape_expr.empty())
         {
@@ -131,6 +131,7 @@ namespace ncnn {
         }
 
         NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",output_blob.w,output_blob.h,output_blob.d,output_blob.c,output_blob.dims);
+        if (output_blob.empty() || output_blob.gpu_data == nullptr) NCNN_LOGE("  *  output blob gpu_data == nullptr");
         NCNN_LOGE("  *  CUDA Reshape forward done");
 
         return 0;

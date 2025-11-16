@@ -16,7 +16,6 @@ void relu_cuda(const CudaMat& input_blob, CudaMat& output_blob, int number);
         int upload_model(const Option& opt) override;
         int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const override;
 
-        // 负斜率参数
         float slope;
     };
 
