@@ -7,12 +7,15 @@
 #include "layer.h"
 
 namespace ncnn {
+void softmax_cuda(const CudaMat& input_blob, CudaMat& output_blob);
+void softmax_cuda_inplace(CudaMat& input_blob);
     class Softmax_cuda : public Layer
     {
     public:
         Softmax_cuda();
         int load_param(const ParamDict& pd) override;
-        int forward_inplace(const CudaMat& input_blob, const Option& opt) const ;
+        int forward(const CudaMat& input_blob, CudaMat& output_blob) const;
+        int forward_inplace(CudaMat& input_blob, const Option& opt) const;
     };
 }
 

@@ -12,7 +12,7 @@ namespace ncnn {
     __global__ void relu_kernel_cuda(const float* input_blob, float* output_blob, int number)
     {
         // 计算全局线程索引（global thread index）
-        unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x * 4;
+        unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
         unsigned int idxElement = idx * 4;
         if (idxElement + 3 < number) {
             float4 vec_in = *(float4*)&input_blob[idxElement];
@@ -34,14 +34,14 @@ namespace ncnn {
             }
         }
     }
-   void relu_cuda(const CudaMat& input_blob, CudaMat& output_blob, int number)
+    void relu_cuda(const CudaMat& input_blob, CudaMat& output_blob, int number)
     {
         int threadsPerBlock = 1024;                                                         // 定义每个线程块的线程数量
         int vec_size = 16 / input_blob.elemsize;                                            // 每个线程处理多少个元素（保证16B）
         int totalThreadsNeeded = (number + vec_size - 1) / vec_size;                        // 计算总共需要多少个线程来处理整个数组。
         int blocksPerGrid = (totalThreadsNeeded + threadsPerBlock - 1) / threadsPerBlock;   // 计算网格中线程块的数量。每个线程块有256个线程，所以总线程数除以每个线程块的线程数，并向上取整。
 
-        relu_kernel_cuda<<<blocksPerGrid, threadsPerBlock>>>(input_blob, output_blob, number);
+        relu_kernel_cuda<<<blocksPerGrid, threadsPerBlock>>>(static_cast<const float*>(input_blob.gpu_data), static_cast<float*>(output_blob.gpu_data), number);
         // 同步设备，等待内核执行完成。这个函数会阻塞主机（CPU）直到设备（GPU）上的所有操作完成。
         cudaDeviceSynchronize();
     }

@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include "innerproduct_cuda.h"
+#include "system.h"
 
 namespace ncnn {
     __global__ void GEMM_kernel_float32(const void* input_blob, const void* weight_blob, void* output_blob, int M, int N, int K)
@@ -53,25 +54,6 @@ namespace ncnn {
 
     int InnerProduct_cuda::InnerProduct_cuda_forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
-        int total_input_size = 0;
-        if (input_blob.dims == 3)
-        {
-            total_input_size = input_blob.c * input_blob.h * input_blob.w;
-        }
-        else if (input_blob.dims == 2)
-        {
-            total_input_size = input_blob.w * input_blob.h;
-        }
-        else if (input_blob.dims == 1)
-        {
-            total_input_size = input_blob.w;
-        }
-        else
-        {
-            NCNN_LOGE("Unsupported input dims: %d\n", input_blob.dims);
-            return -100;
-        }
-
         const int M = input_blob.h;
         const int K = input_blob.w;
         const int N = num_output;

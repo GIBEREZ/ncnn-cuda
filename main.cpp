@@ -5,8 +5,67 @@
 #include <iostream>
 #include <vector>
 #include "net.h"
+#include "layer/cuda/relu_cuda.h"
+#include "layer/cuda/softmax_cuda.h"
+
 #include <cuda_runtime_api.h>
+#include <chrono>
 #include <command.h>
+
+void Layer_GFLOPS()
+{
+    int width = 512;
+    int height = 512;
+    int channels = 512;
+
+    int loop_count = 2000;
+
+    ncnn::Option option;
+    std::vector<float> input_data(width * height * channels);
+
+    for (auto& v : input_data)
+        v = rand() / float(RAND_MAX);
+
+    ncnn::CudaMat input_blob(width, height, channels, input_data.data(), 4);
+    ncnn::CudaMat output_blob(width, height, channels, 4);
+
+    ncnn::ReLU_cuda layer;
+
+    ncnn::cudaEvent_t start_event, end_event;
+    ncnn::cudaEventCreate(&start_event);
+    ncnn::cudaEventCreate(&end_event);
+
+    ncnn::cudaEventRecord(start_event);
+
+    for (int i = 0; i < loop_count; i++)
+    {
+        layer.forward(input_blob, output_blob, option);
+    }
+
+    ncnn::cudaEventRecord(end_event);
+    ncnn::cudaEventSynchronize(end_event);
+
+    float elapsed_ms = 0.f;
+    ncnn::cudaEventElapsedTime(&elapsed_ms, start_event, end_event);
+
+    int N = width * height * channels;
+
+    double flops_per_softmax = 6.0 * N;
+
+    double total_flops = flops_per_softmax * loop_count;
+
+    double elapsed_sec = elapsed_ms / 1000.0;
+
+    double gflops = total_flops / elapsed_sec / 1e9;
+
+    NCNN_LOGE("Softmax Size = %d x %d x %d", width, height, channels);
+    NCNN_LOGE("loop = %d", loop_count);
+    NCNN_LOGE("Elapsed = %.3f ms", elapsed_ms);
+    NCNN_LOGE("GFLOPS = %.3f", gflops);
+
+    ncnn::cudaEventDestroy(start_event);
+    ncnn::cudaEventDestroy(end_event);
+}
 
 void print_mat(const ncnn::Mat& mat, int n = 10)
 {
@@ -52,6 +111,10 @@ void print_mat(const ncnn::Mat& mat, int n = 10)
 
 int main() {
     ncnn::get_device_properties();
+
+    Layer_GFLOPS();
+
+    return 0;
 
     ncnn::Net net;
 
