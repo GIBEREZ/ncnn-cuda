@@ -20,6 +20,7 @@ namespace ncnn {
         // 1 = float32
         // 2 = half16
         // 3 = int8
+        // 4 = CUDA Not 4, 4 Converted to 2
         int type_from;
         int type_to;
     };

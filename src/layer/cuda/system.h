@@ -3,12 +3,12 @@
 
 namespace ncnn {
     // Forward declaration registration
-    __global__ void Cast_kernel_FP32_to_FP16(float* gpu_data);
-    __global__ void Cast_kernel_FP16_to_FP32(half* gpu_data);
-    __global__ void Cast_kernel_FP32_to_INT8(float* gpu_data);
-    __global__ void Cast_kernel_INT8_to_FP32(int8_t* gpu_data);
-    __global__ void Cast_kernel_FP16_to_INT8(half* gpu_data);
-    __global__ void Cast_kernel_INT8_to_FP16(int8_t* gpu_data);
+    __global__ void Cast_kernel_FP32_to_FP16(float* input_blob, half* output_blob, int number);
+    __global__ void Cast_kernel_FP16_to_FP32(half* input_blob, float* output_blob, int number);
+    __global__ void Cast_kernel_FP32_to_INT8(float* input_blob, int8_t* output_blob, int number);
+    __global__ void Cast_kernel_INT8_to_FP32(int8_t* input_blob, float* output_blob, int number);
+    __global__ void Cast_kernel_FP16_to_INT8(half* input_blob, int8_t* output_blob, int number);
+    __global__ void Cast_kernel_INT8_to_FP16(int8_t* input_blob, half* output_blob, int number);
 
     __global__ void GEMM_kernel_float32(const void* input_blob, const void* weight_blob, void* output_blob, int M, int N, int K);
     __global__ void GEMM_kernel_half16(const void* input_blob, const void* weight_blob, void* output_blob, int M, int N, int K);

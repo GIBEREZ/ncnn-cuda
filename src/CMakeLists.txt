@@ -45,6 +45,8 @@ set(ncnn_SRCS
     ../main.cpp
         layer/cuda/cast_cuda.cpp
         layer/cuda/cast_cuda.h
+        layer/cuda/bias_cuda.cpp
+        layer/cuda/bias_cuda.h
 )
 
 if(ANDROID)
