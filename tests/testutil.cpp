@@ -1248,10 +1248,7 @@ int test_layer_cuda(int typeindex, const ncnn::ParamDict& pd, const std::vector<
         op->forward(input_blob, output_blob, opt);
     }
 
-    op->destroy_pipeline(opt);
-
     delete op;
-
     return 0;
 }
 #endif
