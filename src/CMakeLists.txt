@@ -43,12 +43,6 @@ set(ncnn_SRCS
     simplemath.cpp
     simplevk.cpp
     ../main.cpp
-        layer/cuda/innerproduct_cuda.cpp
-        layer/cuda/innerproduct_cuda.h
-        layer/cuda/reshape_cuda.cpp
-        layer/cuda/reshape_cuda.h
-        layer/cuda/softmax_cuda.cpp
-        layer/cuda/softmax_cuda.h
 )
 
 if(ANDROID)
@@ -397,39 +391,24 @@ if(NCNN_CUDA)
         endif()
     endif()
 
-    # ע��CUDA lib������������صĴ�������lib
     if(CUDA_FOUND OR CUDAToolkit_FOUND)
-        # ������ target ��Ӻ궨�� NCNN_CUDA=1�����߱��������� CUDA ��ش���
         add_compile_definitions(NCNN_CUDA=1)
         list(APPEND ncnn_SRCS_CUDA "command.cu")
         add_library(ncnn_cuda_lib STATIC ${ncnn_SRCS_CUDA})
         set_target_properties(ncnn_cuda_lib PROPERTIES
-                # ���� CUDA �ɷ�����루Separable Compilation��
-                # ������ .cu �ļ��ֱ������м�����������ӽ׶���ϳɿ�
-                # ���ڰ������ kernel �Ĵ�����Ŀ�ǳ���Ҫ
                 CUDA_SEPARABLE_COMPILATION ON
-                # ָ��������ʹ��Ĭ�� CUDA ������
-                # ��֤���ɵľ�̬����������ȷ���� C++ ����
                 LINKER_LANGUAGE CXX
-                # ָ��Ŀ�� GPU �ܹ���SM �汾��
-                # sm_50��sm_60��sm_75��sm_80��sm_85 �ֱ��Ӧ��ͬ NVIDIA GPU
-                # CMake ��Ϊ��Щ�ܹ����ɶ�Ӧ�� PTX/SASS ����
                 CUDA_ARCHITECTURES 50 60 75 80 85
         )
         target_include_directories(ncnn_cuda_lib
                 PUBLIC
-                # ����ʱͷ�ļ�·������ǰԴ����Ŀ¼
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-                # ��װ��ͷ�ļ�·������װ�� include/ncnn ��
                 $<INSTALL_INTERFACE:include/ncnn>
-                # ����ʱͷ�ļ�·������ǰ������Ŀ¼��ͨ��������ɵ�ͷ�ļ�
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                 PRIVATE
-                # ˽��ͷ�ļ�·������ ncnn_cuda_lib ����ʹ�ã����ᴫ�ݸ��������� target
                 $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/layer>
         )
         set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_RESOLVE_DEVICE_SYMBOLS ON)
-        # ���� CUDA ͷ�ļ�·��������ʹ�� ncnn ��Ŀ��
         if (DEFINED CUDAToolkit_INCLUDE_DIRS)
             target_include_directories(ncnn PUBLIC ${CUDAToolkit_INCLUDE_DIRS})
         elseif (DEFINED CUDA_INCLUDE_DIRS)

@@ -1226,6 +1226,36 @@ int test_layer_cpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
     return 0;
 }
 
+#if NCNN_CUDA
+int test_layer_cuda(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::CudaMat>& weights, const ncnn::Option& _opt, const ncnn::CudaMat& input_blob, ncnn::CudaMat& output_blob, void (*func)(ncnn::Layer*), int flag)
+{
+    ncnn::Layer* op = ncnn::create_layer_cuda(typeindex);
+
+    op->load_param(pd);
+    ncnn::ModelBinFromMatArray mb(weights.data());
+    op->load_model(mb);
+
+    ncnn::Option opt;
+    opt.use_cuda = true;
+
+    if (op->support_inplace)
+    {
+        output_blob = input_blob;
+        op->forward_inplace(output_blob, opt);
+    }
+    else
+    {
+        op->forward(input_blob, output_blob, opt);
+    }
+
+    op->destroy_pipeline(opt);
+
+    delete op;
+
+    return 0;
+}
+#endif
+
 #if NCNN_VULKAN
 int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::Mat>& weights, const ncnn::Option& _opt, const ncnn::Mat& a, ncnn::Mat& d, const ncnn::Mat& top_shape, void (*func)(ncnn::Layer*), int flag)
 {
@@ -1752,6 +1782,13 @@ int test_layer(const char* layer_type, const ncnn::ParamDict& pd, const std::vec
 
     return 0;
 }
+
+#if NCNN_CUDA
+int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::CudaMat>& weights, const ncnn::Option& _opt, const ncnn::CudaMat& a, float epsilon, void (*func)(ncnn::Layer*), int flag)
+{
+
+}
+#endif
 
 class TestOOMAllocator : public ncnn::UnlockedPoolAllocator
 {

@@ -27,7 +27,19 @@ macro(ncnn_add_layer_test class)
         foreach(test_file ${test_${name}_SRCS})
             get_filename_component(test_filename ${test_file} NAME_WE)
             add_executable(${test_filename} ${test_file})
-            target_link_libraries(${test_filename} PRIVATE ncnntestutil ncnn)
+            if (NCNN_CUDA)
+                target_link_libraries(${test_filename} PRIVATE
+                        ncnntestutil
+                        ncnn
+                        ncnn_cuda_lib
+                        "D:/software/CUDAv12.9/lib/x64/cudart.lib"
+                        "D:/software/CUDAv12.9/lib/x64/cublas.lib"
+                        "D:/software/CUDAv12.9/lib/x64/cublasLt.lib"
+                        "D:/software/CUDAv12.9/lib/x64/cudnn.lib"
+                )
+            else ()
+                target_link_libraries(${test_filename} PRIVATE ncnntestutil ncnn)
+            endif ()
 
             add_test(NAME ${test_filename} COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:${test_filename}> -P ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/run_test.cmake)
 

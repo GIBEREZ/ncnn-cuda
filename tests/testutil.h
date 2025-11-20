@@ -16,6 +16,7 @@
 #define TEST_LAYER_DISABLE_AUTO_INPUT_CASTING (1 << 1)
 #define TEST_LAYER_DISABLE_GPU_TESTING        (1 << 2)
 #define TEST_LAYER_ENABLE_FORCE_INPUT_PACK8   (1 << 3)
+#define TEST_LAYER_DISABLE_CUDA_TESTING       (1 << 4)
 
 void SRAND(int seed);
 
@@ -81,6 +82,10 @@ int test_layer_naive(int typeindex, const ncnn::ParamDict& pd, const std::vector
 
 int test_layer_cpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::Mat>& weights, const ncnn::Option& _opt, const ncnn::Mat& a, ncnn::Mat& c, const ncnn::Mat& top_shape, void (*func)(ncnn::Layer*), int flag);
 
+#if NCNN_CUDA
+int test_layer_cuda(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::CudaMat>& weights, const ncnn::Option& _opt, const ncnn::CudaMat& input_blob, ncnn::CudaMat& output_blob, void (*func)(ncnn::Layer*), int flag);
+#endif
+
 #if NCNN_VULKAN
 int test_layer_gpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::Mat>& weights, const ncnn::Option& _opt, const ncnn::Mat& a, ncnn::Mat& d, const ncnn::Mat& top_shape, void (*func)(ncnn::Layer*), int flag);
 #endif // NCNN_VULKAN
@@ -94,6 +99,10 @@ int test_layer_opt(const char* layer_type, const ncnn::ParamDict& pd, const std:
 int test_layer(const char* layer_type, const ncnn::ParamDict& pd, const std::vector<ncnn::Mat>& weights, const std::vector<ncnn::Mat>& a, int top_blob_count = 1, float epsilon = 0.001, void (*func)(ncnn::Layer*) = 0, int flag = 0);
 
 int test_layer(const char* layer_type, const ncnn::ParamDict& pd, const std::vector<ncnn::Mat>& weights, const ncnn::Mat& a, float epsilon = 0.001, void (*func)(ncnn::Layer*) = 0, int flag = 0);
+
+#if NCNN_CUDA
+int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::CudaMat>& weights, const ncnn::Option& _opt, const ncnn::CudaMat& a, float epsilon, void (*func)(ncnn::Layer*), int flag);
+#endif
 
 // oom test
 

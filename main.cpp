@@ -112,24 +112,31 @@ void print_mat(const ncnn::Mat& mat, int n = 10)
 int main() {
     ncnn::get_device_properties();
 
-    Layer_GFLOPS();
-
-    return 0;
+    // Layer_GFLOPS();
+    //
+    // return 0;
 
     ncnn::Net net;
 
     ncnn::Option option;
     option.use_cuda = true;
-    net.opt = option;
 
-    int ret = net.load_param("D:/software/Projects/PythonProjects/torch/model.ncnn.param");
+    ncnn::Net embed_net_;
+    ncnn::Net encoder_net_;
+    ncnn::Net decoder_net_;
+
+    embed_net_.opt = option;
+    encoder_net_.opt = option;
+    decoder_net_.opt = option;
+
+    int ret = encoder_net_.load_param("D:/software/Model/deepseek_r1_decoder.ncnn.param");
     if (ret != 0)
     {
         printf("Failed to load param file\n");
         return -1;
     }
 
-    ret = net.load_model("D:/software/Projects/PythonProjects/torch/model.ncnn.bin");
+    ret = net.load_model("D:/software/Model/deepseek_r1_decoder.ncnn.bin.00");
     if (ret != 0)
     {
         printf("Failed to load model file\n");
@@ -163,6 +170,8 @@ int main() {
     ncnn::Extractor extractor = net.create_extractor();
 
     extractor.input("in0", input);
+
+    return 0;
 
     extractor.extract("out0", output);
 

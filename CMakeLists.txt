@@ -81,7 +81,7 @@ option(NCNN_SIMPLEVK "minimal in-house vulkan loader" ON)
 option(NCNN_SYSTEM_GLSLANG "use system glslang library" OFF)
 option(NCNN_RUNTIME_CPU "runtime dispatch cpu routines" ON)
 option(NCNN_DISABLE_PIC "disable position-independent code" OFF)
-option(NCNN_BUILD_TESTS "build tests" OFF)
+option(NCNN_BUILD_TESTS "build tests" ON)
 option(NCNN_COVERAGE "build for coverage" OFF)
 option(NCNN_ASAN "build for address sanitizer" OFF)
 option(NCNN_BUILD_BENCHMARK "build benchmark" ON)
@@ -91,7 +91,7 @@ option(NCNN_BF16 "bf16 inference" ON)
 option(NCNN_FORCE_INLINE "force inline some function" ON)
 option(NCNN_CUDA "Enable NVIDIA-CUDA GPU backend" ON)
 
-# ¼ì²é»¥³âÌõ¼ş
+# æ£€æŸ¥äº’æ–¥æ¡ä»¶
 if(NCNN_CUDA AND NCNN_VULKAN)
     message(FATAL_ERROR "NCNN_CUDA and NCNN_VULKAN cannot be ON at the same time. Please choose only one.")
 endif()
@@ -903,9 +903,9 @@ if(NCNN_PYTHON)
     add_subdirectory(python)
 endif()
 
-# ===== Ìí¼ÓÄãµÄ main.cpp ¿ÉÖ´ĞĞÎÄ¼ş =====
+# ===== æ·»åŠ ä½ çš„ main.cpp å¯æ‰§è¡Œæ–‡ä»¶ =====
 add_executable(ncnn_cuda main.cpp)
-# Á´½Ó ncnn ¿â£¨CUDA Ö§³Ö°æ±¾£©£¨cudnn²»ÄÜ¹»±»Ìí¼Óµ½ncnn_cuda_libÎÄ¼şµ±ÖĞ×÷Îª±àÒë£¬ĞèÒªµ¥¶À×÷ÒıÓÃ£©
+# é“¾æ¥ ncnn åº“ï¼ˆCUDA æ”¯æŒç‰ˆæœ¬ï¼‰ï¼ˆcudnnä¸èƒ½å¤Ÿè¢«æ·»åŠ åˆ°ncnn_cuda_libæ–‡ä»¶å½“ä¸­ä½œä¸ºç¼–è¯‘ï¼Œéœ€è¦å•ç‹¬ä½œå¼•ç”¨ï¼‰
 target_link_libraries(ncnn_cuda PRIVATE
         ncnn
         ncnn_cuda_lib
@@ -914,7 +914,7 @@ target_link_libraries(ncnn_cuda PRIVATE
         "D:/software/CUDAv12.9/lib/x64/cublas.lib"
         "D:/software/CUDAv12.9/lib/x64/cublasLt.lib"
 )
-# °üº¬Í·ÎÄ¼şÄ¿Â¼£¨ncnn µÄÍ·ÎÄ¼şÂ·¾¶£©
+# åŒ…å«å¤´æ–‡ä»¶ç›®å½•ï¼ˆncnn çš„å¤´æ–‡ä»¶è·¯å¾„ï¼‰
 target_include_directories(ncnn_cuda PRIVATE
         ${CMAKE_SOURCE_DIR}/src
 )

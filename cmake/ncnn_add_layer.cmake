@@ -128,33 +128,33 @@ macro(ncnn_add_layer class)
 
     if(NCNN_CUDA)
         enable_language(CUDA)
-        # Æ´³öÎÄ¼şÂ·¾¶
+        # æ‹¼å‡ºæ–‡ä»¶è·¯å¾„
         set(cuda_header "${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.h")
         set(cuda_source "${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.cpp")
         set(cuda_cu     "${CMAKE_CURRENT_SOURCE_DIR}/layer/cuda/${name}_cuda.cu")
 
-        # ¼ì²éÍ·ÎÄ¼şºÍcuÎÄ¼şÊÇ·ñ´æÔÚ
+        # æ£€æŸ¥å¤´æ–‡ä»¶å’Œcuæ–‡ä»¶æ˜¯å¦å­˜åœ¨
         if(EXISTS "${cuda_header}" AND EXISTS "${cuda_cu}")
-            # Ìí¼ÓÉùÃ÷
+            # æ·»åŠ å£°æ˜
             string(APPEND layer_declaration "#include \"layer/cuda/${name}_cuda.h\"\n")
             string(APPEND layer_declaration "namespace ncnn { DEFINE_LAYER_CREATOR(${class}_cuda) }\n")
 
-            # ·Ö×éÏÔÊ¾ÔÚIDE
+            # åˆ†ç»„æ˜¾ç¤ºåœ¨IDE
             source_group("sources\\layers\\cuda" FILES "${cuda_cu}")
 
-            # Ìí¼Ó cpp ÎÄ¼ş
+            # æ·»åŠ  cpp æ–‡ä»¶
             list(APPEND ncnn_SRCS "${cuda_source}")
             set(WITH_LAYER_${name}_cuda 1)
 
-            # Ìí¼ÓcuÎÄ¼ş²¢ÉèÖÃÎªCUDAÓïÑÔ
+            # æ·»åŠ cuæ–‡ä»¶å¹¶è®¾ç½®ä¸ºCUDAè¯­è¨€
             message(STATUS "Detected CUDA layer for '${name}', registering ${name}_cuda.cu/.h")
             list(APPEND ncnn_SRCS_CUDA "${cuda_cu}")
             set(WITH_LAYER_${name}_cuda 1)
 
-            # ÉèÖÃCUDAÓïÑÔÊôĞÔ
+            # è®¾ç½®CUDAè¯­è¨€å±æ€§
             set_source_files_properties("${cuda_cu}" PROPERTIES LANGUAGE CUDA)
         else()
-            # Èç¹ûÖ»ÓĞÍ·ÎÄ¼şºÍ.cppÎÄ¼ş£¬µ«Ã»ÓĞ.cuÎÄ¼ş£¬¸ø³ö¾¯¸æ
+            # å¦‚æœåªæœ‰å¤´æ–‡ä»¶å’Œ.cppæ–‡ä»¶ï¼Œä½†æ²¡æœ‰.cuæ–‡ä»¶ï¼Œç»™å‡ºè­¦å‘Š
             if(EXISTS "${cuda_header}" AND NOT EXISTS "${cuda_cu}")
                 message(WARNING "Found ${name}_cuda.h but no ${name}_cuda.cu - CUDA layer may not work properly")
             endif()
