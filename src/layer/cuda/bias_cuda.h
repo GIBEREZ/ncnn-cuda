@@ -13,13 +13,12 @@ namespace ncnn {
     public:
         Bias_cuda();
         virtual int load_param(const ParamDict& pd);
-        virtual int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
+        virtual int load_model(const ModelBin& mb);
         virtual int forward_inplace(CudaMat& output_blob, const Option& opt) const;
+        int Bias_cuda_forward_inplace(CudaMat& input_blob) const;
     public:
-        // param
         int bias_data_size;
-        // model
-        CudaMat bias_data;
+        CudaMat bias_blob;
     };
 }
 
