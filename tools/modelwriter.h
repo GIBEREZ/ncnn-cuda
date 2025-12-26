@@ -101,6 +101,7 @@
 #include "layer/split.h"
 #include "layer/squeeze.h"
 #include "layer/threshold.h"
+#include "layer/tile.h"
 #include "layer/unaryop.h"
 #include "layer/unfold.h"
 #include "layer/yolodetectionoutput.h"
@@ -900,7 +901,10 @@ int ModelWriter::save(const char* parampath, const char* binpath)
                 {
                     fwrite_weight_data(op->weight_data_int8_scales, bp, 90, 100);
                     fwrite_weight_data(op->bottom_blob_int8_scales, bp, 0.001, 1);
-                    fwrite_weight_data(op->top_blob_int8_scales, bp, 0.001, 1);
+                    if (op->int8_scale_term > 100)
+                    {
+                        fwrite_weight_data(op->top_blob_int8_scales, bp, 0.001, 1);
+                    }
                 }
 #endif // NCNN_INT8
             }
@@ -1073,7 +1077,10 @@ int ModelWriter::save(const char* parampath, const char* binpath)
                 {
                     fwrite_weight_data(op->weight_data_int8_scales, bp, 90, 100);
                     fwrite_weight_data(op->bottom_blob_int8_scales, bp, 0.001, 1);
-                    fwrite_weight_data(op->top_blob_int8_scales, bp, 0.001, 1);
+                    if (op->int8_scale_term > 100)
+                    {
+                        fwrite_weight_data(op->top_blob_int8_scales, bp, 0.001, 1);
+                    }
                 }
 #endif // NCNN_INT8
             }
@@ -2487,6 +2494,17 @@ int ModelWriter::save(const char* parampath, const char* binpath)
             ncnn::Threshold* op_default = (ncnn::Threshold*)layer_default;
 
             fprintf_param_value(" 0=%e", threshold)
+        }
+        else if (layer->type == "Tile")
+        {
+            ncnn::Tile* op = (ncnn::Tile*)layer;
+            ncnn::Tile* op_default = (ncnn::Tile*)layer_default;
+
+            fprintf_param_value(" 0=%d", axis)
+            fprintf_param_value(" 1=%d", tiles)
+            {
+                if (!op->repeats.empty()) fprintf_param_int_array(2, op->repeats, pp);
+            }
         }
         else if (layer->type == "UnaryOp")
         {
