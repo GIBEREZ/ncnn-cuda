@@ -29,11 +29,14 @@ namespace ncnn {
     public:
         BinaryOp_cuda();
 
-        virtual int load_param(const ParamDict& pd);
-        virtual int forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const;
-        virtual int forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const;
+        int binaryop_cuda(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt);
 
-        int binary_op_selector();
+        int load_param(const ParamDict& pd) override;
+        int forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const override;
+        int forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const override;
+
+        int binary_op_broadcast(const CudaMat& input_blob, void* B, void* C, int A_number);
+        int binary_op_broadcast_inplace(CudaMat& input_blob, void* B, int A_number);
 
     public:
         int op_type;

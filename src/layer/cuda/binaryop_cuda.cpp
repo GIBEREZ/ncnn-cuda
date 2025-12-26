@@ -29,7 +29,11 @@ namespace ncnn {
 
     int BinaryOp_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const
     {
-
+        NCNN_LOGE("  *  Running CUDA BinaryOp_%d forward", op_type);
+        binaryop_cuda(bottom_blobs, top_blobs, opt);
+        NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",output_blob.w,output_blob.h,output_blob.d,output_blob.c,output_blob.dims);
+        if (output_blob.empty() || output_blob.gpu_data == nullptr) NCNN_LOGE("  *  output blob gpu_data == nullptr");
+        NCNN_LOGE("  *  CUDA BinaryOp_%d forward done", op_type);
         return 0;
     }
 

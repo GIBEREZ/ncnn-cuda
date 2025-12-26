@@ -381,7 +381,7 @@ public:
     void upload(const Mat& mat) const;
 
     // Precision selection 4=float32/int32; 2 = float16; 1 = int8/uint8; 0 = empty
-    size_t elemsize;
+    int elemsize;
     // Data pointer in NVIDIA CUDA
     void* gpu_data;     // gpu指针数据
     int w;              // 宽度
