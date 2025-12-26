@@ -399,6 +399,7 @@ if(NCNN_CUDA)
     if(CUDA_FOUND OR CUDAToolkit_FOUND)
         add_compile_definitions(NCNN_CUDA=1)
         list(APPEND ncnn_SRCS_CUDA "command.cu")
+        list(APPEND ncnn_SRCS_CUDA "layer/cuda/system.cu")
         add_library(ncnn_cuda_lib STATIC ${ncnn_SRCS_CUDA})
         set_target_properties(ncnn_cuda_lib PROPERTIES
                 CUDA_SEPARABLE_COMPILATION ON

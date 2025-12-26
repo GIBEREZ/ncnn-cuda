@@ -202,7 +202,7 @@ namespace ncnn {
     }
 
 
-    int BinaryOp_cuda::binary_op_broadcast(const CudaMat& input_blob, void* B, void* C, int A_number)
+    int BinaryOp_cuda::binary_op_broadcast(const CudaMat& input_blob, void* B, void* C, int A_number) const
     {
         int threads = 256;
         int blocks = (A_number + input_blob.elemsize * threads - 1) / (input_blob.elemsize * threads);
@@ -380,10 +380,10 @@ namespace ncnn {
 
     int BinaryOp_cuda::binary_op_broadcast_inplace(CudaMat& input_blob, void* B, int A_number)
     {
-
+        return 0;
     }
 
-    int BinaryOp_cuda::binaryop_cuda(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt)
+    int BinaryOp_cuda::binaryop_cuda(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs) const
     {
         const CudaMat& A = bottom_blobs[0];
         const CudaMat& B = bottom_blobs[1];

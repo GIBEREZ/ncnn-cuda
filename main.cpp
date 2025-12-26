@@ -5,116 +5,13 @@
 #include <iostream>
 #include <vector>
 #include "net.h"
-#include "layer/cuda/relu_cuda.h"
-#include "layer/cuda/softmax_cuda.h"
 
 #include <cuda_runtime_api.h>
 #include <chrono>
 #include <command.h>
 
-void Layer_GFLOPS()
-{
-    int width = 512;
-    int height = 512;
-    int channels = 512;
-
-    int loop_count = 2000;
-
-    ncnn::Option option;
-    std::vector<float> input_data(width * height * channels);
-
-    for (auto& v : input_data)
-        v = rand() / float(RAND_MAX);
-
-    ncnn::CudaMat input_blob(width, height, channels, input_data.data(), 4);
-    ncnn::CudaMat output_blob(width, height, channels, 4);
-
-    ncnn::ReLU_cuda layer;
-
-    ncnn::cudaEvent_t start_event, end_event;
-    ncnn::cudaEventCreate(&start_event);
-    ncnn::cudaEventCreate(&end_event);
-
-    ncnn::cudaEventRecord(start_event);
-
-    for (int i = 0; i < loop_count; i++)
-    {
-        layer.forward(input_blob, output_blob, option);
-    }
-
-    ncnn::cudaEventRecord(end_event);
-    ncnn::cudaEventSynchronize(end_event);
-
-    float elapsed_ms = 0.f;
-    ncnn::cudaEventElapsedTime(&elapsed_ms, start_event, end_event);
-
-    int N = width * height * channels;
-
-    double flops_per_softmax = 6.0 * N;
-
-    double total_flops = flops_per_softmax * loop_count;
-
-    double elapsed_sec = elapsed_ms / 1000.0;
-
-    double gflops = total_flops / elapsed_sec / 1e9;
-
-    NCNN_LOGE("Softmax Size = %d x %d x %d", width, height, channels);
-    NCNN_LOGE("loop = %d", loop_count);
-    NCNN_LOGE("Elapsed = %.3f ms", elapsed_ms);
-    NCNN_LOGE("GFLOPS = %.3f", gflops);
-
-    ncnn::cudaEventDestroy(start_event);
-    ncnn::cudaEventDestroy(end_event);
-}
-
-void print_mat(const ncnn::Mat& mat, int n = 10)
-{
-    if (mat.empty())
-    {
-        printf("Mat is empty\n");
-        return;
-    }
-
-    int elemsize = mat.elemsize;
-    int total_elements = mat.total();
-    int channels = mat.c;
-    int width = mat.w;
-    int height = mat.h;
-
-    printf("Mat: w=%d, h=%d, c=%d, total=%d, elemsize=%d\n", width, height, channels, total_elements, elemsize);
-
-    int print_count = std::min(n, total_elements);
-
-    if (elemsize == 1)
-    {
-        unsigned char* ptr = (unsigned char*)mat.data;
-        for (int i = 0; i < print_count; i++)
-            printf("mat[%d] = %u\n", i, ptr[i]);
-    }
-    else if (elemsize == 2)
-    {
-        uint16_t* ptr = (uint16_t*)mat.data;
-        for (int i = 0; i < print_count; i++)
-            printf("mat[%d] = %u\n", i, ptr[i]);
-    }
-    else if (elemsize == 4)
-    {
-        float* ptr = (float*)mat.data;
-        for (int i = 0; i < print_count; i++)
-            printf("mat[%d] = %f\n", i, ptr[i]);
-    }
-    else
-    {
-        printf("Unsupported element size: %d\n", elemsize);
-    }
-}
-
 int main() {
     ncnn::get_device_properties();
-
-    // Layer_GFLOPS();
-    //
-    // return 0;
 
     ncnn::Net net;
 
@@ -136,7 +33,7 @@ int main() {
         return -1;
     }
 
-    ret = net.load_model("D:/software/Model/deepseek_r1_decoder.ncnn.bin.00");
+    ret = encoder_net_.load_model("D:/software/Model/deepseek_r1_decoder.ncnn.bin.00");
     if (ret != 0)
     {
         printf("Failed to load model file\n");

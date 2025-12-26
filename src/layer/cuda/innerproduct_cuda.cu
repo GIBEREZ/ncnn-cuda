@@ -86,7 +86,7 @@ namespace ncnn {
                 (M + 8 - 1) / 8
             );
             dim3 threadsPerBlock(8, 8);
-            GEMM_kernel_FP16<<<blocksPerGrid, threadsPerBlock>>>(
+            GEMM_kernel_half16<<<blocksPerGrid, threadsPerBlock>>>(
                 input_blob.gpu_data, weight_blob.gpu_data, output_blob.gpu_data, M, N, K);
         }
         else if (input_blob.elemsize == 1)
@@ -96,7 +96,7 @@ namespace ncnn {
                 (M + 4 - 1) / 4
             );
             dim3 threadsPerBlock(4, 4);
-            GEMM_kernel_INT8<<<blocksPerGrid, threadsPerBlock>>>(
+            GEMM_kernel_int8<<<blocksPerGrid, threadsPerBlock>>>(
                 input_blob.gpu_data, weight_blob.gpu_data, output_blob.gpu_data, M, N, K);
         }
 

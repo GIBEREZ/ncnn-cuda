@@ -42,7 +42,16 @@ namespace ncnn {
             output_blob[idx] = __float2int_rz(input_blob[idx]);
         }
     }
-    __global__ void Cast_kernel_INT8_to_FP32(int8_t* input_blob, float* output_blob, int number);
-    __global__ void Cast_kernel_FP16_to_INT8(half* input_blob, int8_t* output_blob, int number);
-    __global__ void Cast_kernel_INT8_to_FP16(int8_t* input_blob, half* output_blob, int number);
+    __global__ void Cast_kernel_INT8_to_FP32(int8_t* input_blob, float* output_blob, int number)
+    {
+
+    }
+    __global__ void Cast_kernel_FP16_to_INT8(half* input_blob, int8_t* output_blob, int number)
+    {
+
+    }
+    __global__ void Cast_kernel_INT8_to_FP16(int8_t* input_blob, half* output_blob, int number)
+    {
+
+    }
 }
