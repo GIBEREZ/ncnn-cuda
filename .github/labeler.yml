@@ -44,6 +44,9 @@ mips:
 riscv: 
 - changed-files:
   - any-glob-to-any-file: src/layer/riscv/**
+cuda:
+  - changed-files:
+      - any-glob-to-any-file: src/layer/cuda/**
 vulkan: 
 - changed-files:
   - any-glob-to-any-file: src/layer/vulkan/**
