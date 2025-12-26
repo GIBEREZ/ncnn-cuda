@@ -217,6 +217,7 @@ Layer* create_layer_cpu(const char* type)
     return create_layer_cpu(index);
 }
 
+#if NCNN_CUDA
 Layer* create_layer_cuda(const char* type)
 {
     int index = layer_to_index(type);
@@ -225,6 +226,7 @@ Layer* create_layer_cuda(const char* type)
 
     return create_layer_cuda(index);
 }
+#endif
 
 
 #if NCNN_VULKAN
