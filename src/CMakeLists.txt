@@ -42,11 +42,6 @@ set(ncnn_SRCS
     simplestl.cpp
     simplemath.cpp
     simplevk.cpp
-    ../main.cpp
-        layer/cuda/cast_cuda.cpp
-        layer/cuda/cast_cuda.h
-        layer/cuda/bias_cuda.cpp
-        layer/cuda/bias_cuda.h
 )
 
 if(ANDROID)
