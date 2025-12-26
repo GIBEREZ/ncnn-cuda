@@ -10,9 +10,9 @@ namespace ncnn {
     __global__ void Cast_kernel_FP16_to_INT8(half* input_blob, int8_t* output_blob, int number);
     __global__ void Cast_kernel_INT8_to_FP16(int8_t* input_blob, half* output_blob, int number);
 
-    __global__ void GEMM_kernel_float32(const void* input_blob, const void* weight_blob, void* output_blob, int M, int N, int K);
-    __global__ void GEMM_kernel_half16(const void* input_blob, const void* weight_blob, void* output_blob, int M, int N, int K);
-    __global__ void GEMM_kernel_int8(const void* input_blob, const void* weight_blob, void* output_blob, int M, int N, int K);
+    __global__ void GEMM_kernel_FP32(const void* input_blob, const void* weight_blob, void* output_blob, int M, int N, int K);
+    __global__ void GEMM_kernel_FP16(const void* input_blob, const void* weight_blob, void* output_blob, int M, int N, int K);
+    __global__ void GEMM_kernel_INT8(const void* input_blob, const void* weight_blob, void* output_blob, int M, int N, int K);
 
     struct LOAD {
         const void* gpu_data;

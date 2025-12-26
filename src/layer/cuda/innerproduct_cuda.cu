@@ -3,7 +3,7 @@
 #include "system.h"
 
 namespace ncnn {
-    __global__ void GEMM_kernel_float32(const void* input_blob, const void* weight_blob, void* output_blob, int M, int N, int K)
+    __global__ void GEMM_kernel_FP32(const void* input_blob, const void* weight_blob, void* output_blob, int M, int N, int K)
     {
         constexpr int TILE_SIZE = 4;
         __shared__ float As[TILE_SIZE][TILE_SIZE];
@@ -76,7 +76,7 @@ namespace ncnn {
                 (M + 4 - 1) / 4
             );
             dim3 threadsPerBlock(4, 4);
-            GEMM_kernel_float32<<<blocksPerGrid, threadsPerBlock>>>(
+            GEMM_kernel_FP32<<<blocksPerGrid, threadsPerBlock>>>(
                 input_blob.gpu_data, weight_blob.gpu_data, output_blob.gpu_data, M, N, K);
         }
         else if (input_blob.elemsize == 2)
@@ -86,7 +86,7 @@ namespace ncnn {
                 (M + 8 - 1) / 8
             );
             dim3 threadsPerBlock(8, 8);
-            GEMM_kernel_half16<<<blocksPerGrid, threadsPerBlock>>>(
+            GEMM_kernel_FP16<<<blocksPerGrid, threadsPerBlock>>>(
                 input_blob.gpu_data, weight_blob.gpu_data, output_blob.gpu_data, M, N, K);
         }
         else if (input_blob.elemsize == 1)
@@ -96,7 +96,7 @@ namespace ncnn {
                 (M + 4 - 1) / 4
             );
             dim3 threadsPerBlock(4, 4);
-            GEMM_kernel_int8<<<blocksPerGrid, threadsPerBlock>>>(
+            GEMM_kernel_INT8<<<blocksPerGrid, threadsPerBlock>>>(
                 input_blob.gpu_data, weight_blob.gpu_data, output_blob.gpu_data, M, N, K);
         }
 
