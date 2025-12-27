@@ -52,6 +52,35 @@ namespace ncnn {
         return 0;
     }
 
+    void get_CUDA_device_deviceInfo()
+    {
+        int deviceId;
+
+        cudaGetDevice(&deviceId);
+
+        cudaDeviceProp props;
+        cudaGetDeviceProperties(&props, deviceId);
+
+        /*
+         * There should be no need to modify the output string below.
+         */
+        NCNN_LOGE("=== Obtain GPU device deviceInfo ===");
+        NCNN_LOGE("Device ID: %d", deviceId);
+        NCNN_LOGE("  Number of SMs: %d", props.multiProcessorCount);
+        NCNN_LOGE("  Compute Capability Major: %d", props.major);
+        NCNN_LOGE("  Compute Capability Minor: %d", props.minor);
+        NCNN_LOGE("  memoryBusWidth: %d", props.memoryBusWidth);
+        NCNN_LOGE("  maxThreadsPerBlock: %d", props.maxThreadsPerBlock);
+        NCNN_LOGE("  maxThreadsPerMultiProcessor: %d", props.maxThreadsPerMultiProcessor);
+        NCNN_LOGE("  totalGlobalMem: %zuM", props.totalGlobalMem / 1024 / 1024);
+        NCNN_LOGE("  sharedMemPerBlock: %zuKB", props.sharedMemPerBlock / 1024);
+        NCNN_LOGE("  sharedMemPerMultiprocessor: %zuKB", props.sharedMemPerMultiprocessor / 1024);
+        NCNN_LOGE("  totalConstMem: %zuKB", props.totalConstMem / 1024);
+        NCNN_LOGE("  multiProcessorCount: %d", props.multiProcessorCount);
+        NCNN_LOGE("  Warp Size: %d", props.warpSize);
+        NCNN_LOGE("=====================\n");
+    }
+
     CudaCompute::CudaCompute(int DeviceIndex)
     {
         this->device_index = DeviceIndex;

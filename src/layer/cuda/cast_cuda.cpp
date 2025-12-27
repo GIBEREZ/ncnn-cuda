@@ -31,7 +31,6 @@ namespace ncnn {
         if (output_blob.empty() || output_blob.gpu_data == nullptr) NCNN_LOGE("  *  output blob gpu_data == nullptr");
         NCNN_LOGE("  *  CUDA Cast forward done");
         return 0;
-        return 0;
     }
 
 } // namespace ncnn

@@ -2,6 +2,8 @@
 #include <cuda_fp16.h>
 
 namespace ncnn {
+    #define CEIL(x, y) (((x) + (y) - 1) / (y))
+
     // Forward declaration registration
     __global__ void Cast_kernel_FP32_to_FP16(float* input_blob, half* output_blob, int number);
     __global__ void Cast_kernel_FP16_to_FP32(half* input_blob, float* output_blob, int number);

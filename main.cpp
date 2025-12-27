@@ -12,6 +12,9 @@
 
     int main() {
         ncnn::get_device_properties();
+        ncnn::get_CUDA_device_deviceInfo();
+
+        return 0;
 
         ncnn::Net net;
 

@@ -212,12 +212,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_add><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_add><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -225,12 +225,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_sub><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_sub><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -238,12 +238,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_mul><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_mul><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -251,12 +251,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_div><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_div><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -264,12 +264,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_max><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_max><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -277,12 +277,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_min><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_min><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -290,12 +290,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_pow><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_pow><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -303,12 +303,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_rsub><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_rsub><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -316,12 +316,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_rdiv><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_rdiv><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -329,12 +329,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_rpow><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_rpow><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -342,12 +342,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_atan2><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_atan2><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -355,12 +355,12 @@ namespace ncnn {
                 if (input_blob.elemsize == 4)
                 {
                     binaryop_kernel_FP32<Operation_ratan2><<<blocks, threads>>>(
-                        static_cast<float*>(input_blob.data),static_cast<float*>(B),static_cast<float*>(C),A_number);
+                        static_cast<float*>(input_blob.gpu_data),static_cast<float*>(B),static_cast<float*>(C),A_number);
                 }
                 else if (input_blob.elemsize == 2)
                 {
                     binaryop_kernel_FP16<Operation_ratan2><<<blocks, threads>>>(
-                        static_cast<half*>(input_blob.data),static_cast<half*>(B),static_cast<half*>(C),A_number);
+                        static_cast<half*>(input_blob.gpu_data),static_cast<half*>(B),static_cast<half*>(C),A_number);
                 }
                 break;
 
@@ -480,7 +480,7 @@ namespace ncnn {
         if (top_blob.empty())
             return -100;
 
-        binary_op_broadcast(A2, B2, top_blob, op_type);
+        binary_op_broadcast(A2, B2, top_blob, A.total());
         return 0;
     }
 }

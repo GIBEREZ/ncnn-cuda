@@ -13,6 +13,7 @@
 namespace ncnn {
     [[nodiscard]] std::vector<cudaDeviceProp> get_device_properties();
     int printf_CudaMat_gpu_data(const CudaMat& input_blob);
+    void get_CUDA_device_deviceInfo();
 
     class CudaCompute
     {
