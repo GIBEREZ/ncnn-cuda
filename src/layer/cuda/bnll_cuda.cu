@@ -24,10 +24,12 @@ namespace ncnn {
     __global__ void BNLL_inplace_kernel(float* input, const int Number)
     {
         unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        unsigned int vec_idx = idx * 4;
+        unsigned int idxElement = idx * 4;
+        if (idxElement >= Number)
+            return;
 
-        if (vec_idx + 3 < Number) {
-            const float4 vec_in = *reinterpret_cast<const float4*>(input + vec_idx);
+        if (idxElement + 3 < Number) {
+            const float4 vec_in = *reinterpret_cast<const float4*>(input + idxElement);
 
             float4 vec_out;
             vec_out.x = bnll_activation(vec_in.x);
@@ -35,12 +37,12 @@ namespace ncnn {
             vec_out.z = bnll_activation(vec_in.z);
             vec_out.w = bnll_activation(vec_in.w);
 
-            *reinterpret_cast<float4*>(input + vec_idx) = vec_out;
+            *reinterpret_cast<float4*>(input + idxElement) = vec_out;
         }
         else {
             #pragma unroll
             for (int i = 0; i < 4; i++) {
-                int pos = vec_idx + i;
+                int pos = idxElement + i;
                 if (pos < Number) {
                     input[pos] = bnll_activation(input[pos]);
                 }

@@ -7,9 +7,9 @@ namespace ncnn {
     __global__ void AbsVal_kernel(const float* input, float* output, int Number)
     {
         unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx >= Number)
-            return;
         unsigned int idxElement = idx * 4;
+        if (idxElement >= Number)
+            return;
         const float4 vec_in = *reinterpret_cast<const float4*>(input + idxElement);
         float4 vec_out;
         vec_out.x = fabsf(vec_in.x);
@@ -22,9 +22,9 @@ namespace ncnn {
     __global__ void AbsVal_inplace_kernel(float* input, int Number)
     {
         unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx >= Number)
-            return;
         unsigned int idxElement = idx * 4;
+        if (idxElement >= Number)
+            return;
         const float4 vec_in = *reinterpret_cast<const float4*>(input + idxElement);
         float4 vec_out;
         vec_out.x = fabsf(vec_in.x);

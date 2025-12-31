@@ -7,9 +7,9 @@ namespace ncnn {
     __global__ void batchnorm_precompute_kernel(float* a, float* b, const float* bias, const float* slope, const float* mean, const float* var, const float eps, const int Number)
     {
         unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx >= Number)
-            return;
         unsigned int idxElement = idx * 4;
+        if (idxElement >= Number)
+            return;
         float4 var4   = *reinterpret_cast<const float4*>(var + idxElement);
         float4 slope4 = *reinterpret_cast<const float4*>(slope + idxElement);
         float4 mean4  = *reinterpret_cast<const float4*>(mean + idxElement);
@@ -43,9 +43,9 @@ namespace ncnn {
     __global__ void batchnorm_kernel(float* input, float* a, float* b, const int Number)
     {
         unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx >= Number)
-            return;
         unsigned int idxElement = idx * 4;
+        if (idxElement >= Number)
+            return;
 
         float4 vec_in = *reinterpret_cast<const float4*>(input + idxElement);
         float4 vec_a  = *reinterpret_cast<const float4*>(a + idxElement);
