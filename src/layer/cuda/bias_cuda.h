@@ -12,9 +12,9 @@ namespace ncnn {
     {
     public:
         Bias_cuda();
-        virtual int load_param(const ParamDict& pd);
-        virtual int load_model(const ModelBin& mb);
-        virtual int forward_inplace(CudaMat& output_blob, const Option& opt) const;
+        int load_param(const ParamDict& pd) override;
+        int load_model(const ModelBin& mb) override;
+        int forward_inplace(CudaMat& output_blob, const Option& opt) const override;
         int Bias_cuda_forward_inplace(CudaMat& input_blob) const;
     public:
         int bias_data_size;

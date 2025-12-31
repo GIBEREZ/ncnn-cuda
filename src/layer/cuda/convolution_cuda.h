@@ -12,10 +12,10 @@ namespace ncnn {
     {
     public:
         Convolution_cuda();
-        virtual int load_param(const ParamDict& pd);
-        virtual int load_model(const ModelBin& mb);
-        virtual int upload_model(const Option& opt);
-        virtual int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
+        int load_param(const ParamDict& pd) override;
+        int load_model(const ModelBin& mb) override;
+        int upload_model(const Option& opt) override;
+        int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const override;
         int Convolution_cuda_forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
 
     public:

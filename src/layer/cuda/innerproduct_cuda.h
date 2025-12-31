@@ -13,9 +13,9 @@ namespace ncnn
     {
     public:
         InnerProduct_cuda();
-        virtual int load_param(const ParamDict& pd);
-        virtual int load_model(const ModelBin& mb);
-        virtual int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
+        int load_param(const ParamDict& pd) override;
+        int load_model(const ModelBin& mb) override;
+        int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const override;
         int InnerProduct_cuda_forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
     public:
         CudaMat weight_blob;    // Model weight matrix data

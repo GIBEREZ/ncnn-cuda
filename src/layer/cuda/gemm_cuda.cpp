@@ -67,36 +67,36 @@ namespace ncnn {
         if (constantA == 1)
         {
             if (transA == 0)
-                A = CudaMat(mb.load(constantK, constantM, 0));
+                model_A = CudaMat(mb.load(constantK, constantM, 0));
             else
-                A = CudaMat(mb.load(constantM, constantK, 0));
-            if (A.empty())
+                model_A = CudaMat(mb.load(constantM, constantK, 0));
+            if (model_A.empty())
                 return -100;
         }
 
         if (constantB == 1)
         {
             if (transB == 0)
-                B = CudaMat(mb.load(constantN, constantK, 0));
+                model_B = CudaMat(mb.load(constantN, constantK, 0));
             else
-                B = CudaMat(mb.load(constantK, constantN, 0));
-            if (B.empty())
+                model_B = CudaMat(mb.load(constantK, constantN, 0));
+            if (model_B.empty())
                 return -100;
         }
 
         if (constantC == 1 && constant_broadcast_type_C != -1)
         {
             if (constant_broadcast_type_C == 0)
-                C = CudaMat(mb.load(1, 0));
+                model_C = CudaMat(mb.load(1, 0));
             if (constant_broadcast_type_C == 1)
-                C = CudaMat(mb.load(constantM, 0));
+                model_C = CudaMat(mb.load(constantM, 0));
             if (constant_broadcast_type_C == 2)
-                C = CudaMat(mb.load(1, constantM, 0));
+                model_C = CudaMat(mb.load(1, constantM, 0));
             if (constant_broadcast_type_C == 3)
-                C = CudaMat(mb.load(constantN, constantM, 0));
+                model_C = CudaMat(mb.load(constantN, constantM, 0));
             if (constant_broadcast_type_C == 4)
-                C = CudaMat(mb.load(constantN, 1, 0));
-            if (C.empty())
+                model_C = CudaMat(mb.load(constantN, 1, 0));
+            if (model_C.empty())
                 return -100;
         }
         return 0;
@@ -113,7 +113,7 @@ namespace ncnn {
 
     int Gemm_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const
     {
-
+        return 0;
     }
 
 

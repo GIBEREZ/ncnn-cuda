@@ -30,7 +30,7 @@ namespace ncnn {
         int total = input_blob.total();
         int total4 = (total + 3) / 4;
 
-        int threads_per_block = 1024;
+        int threads_per_block = 256;
         int blocks_per_grid = (total4 + threads_per_block - 1) / threads_per_block;
 
         Sigmoid_float4_kernel<<<blocks_per_grid, threads_per_block>>>(static_cast<float*>(input_blob.gpu_data), total);

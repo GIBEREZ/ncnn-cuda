@@ -5,7 +5,6 @@
 #ifndef NCNN_GEMM_CUDA_H
 #define NCNN_GEMM_CUDA_H
 #include "layer.h"
-#include "system.h"
 
 namespace ncnn {
     class Gemm_cuda : public Layer
@@ -29,9 +28,9 @@ namespace ncnn {
         int constantA;
         int constantB;
         int constantC;
-        CudaMat A;
-        CudaMat B;
-        CudaMat C;
+        CudaMat model_A;
+        CudaMat model_B;
+        CudaMat model_C;
 
         // constant matrix shape
         int constantM;
