@@ -7,7 +7,7 @@
 #include "layer.h"
 
 namespace ncnn {
-int Sigmoid_cuda_forward_inplace(CudaMat& input_blob);
+int sigmoid_cuda_inplace(CudaMat& input_blob);
     class Sigmoid_cuda : public Layer
     {
         public:

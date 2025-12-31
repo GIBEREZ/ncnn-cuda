@@ -7,6 +7,8 @@
 #include "layer.h"
 
 namespace ncnn {
+int softmax_cuda(const CudaMat& input_blob, CudaMat& output_blob);
+int softmax_cuda_inplace(CudaMat& input_blob);
     class Softmax_cuda : public Layer
     {
     public:

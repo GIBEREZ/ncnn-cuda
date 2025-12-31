@@ -113,6 +113,11 @@ namespace ncnn {
 
     int Gemm_cuda::forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const
     {
+        NCNN_LOGE("  *  Running CUDA Gemm forward");
+        gemm_cuda(bottom_blobs, top_blobs, opt);
+        NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",top_blobs[0].w,top_blobs[0].h,top_blobs[0].d,top_blobs[0].c,top_blobs[0].dims);
+        if (top_blobs[0].empty() || top_blobs[0].gpu_data == nullptr) NCNN_LOGE("  *  output blob gpu_data == nullptr");
+        NCNN_LOGE("  *  CUDA ReLU forward done");
         return 0;
     }
 

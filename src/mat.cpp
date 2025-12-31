@@ -990,7 +990,7 @@ bool CudaMat::empty() const
     return alloc_bytes == 0 || w == 0 || h == 0 || c == 0 || d == 0;
 }
 
-size_t CudaMat::total() const
+int CudaMat::total() const
 {
     if (dims <= 0) return 0;
     size_t t = 1;

@@ -25,7 +25,7 @@ namespace ncnn {
         }
     }
 
-    int Sigmoid_cuda_forward_inplace(CudaMat& input_blob)
+    int sigmoid_cuda_inplace(CudaMat& input_blob)
     {
         int total = input_blob.total();
         int total4 = (total + 3) / 4;

@@ -343,7 +343,7 @@ public:
     // empty
     CudaMat();
     // Accept tensors with 1-4 dimensions
-    CudaMat(int w, size_t elemsize);
+    CudaMat(int w, size_t elemsize );
     CudaMat(int w, int h, size_t elemsize);
     CudaMat(int w, int h, int c, size_t elemsize);
     CudaMat(int w, int h, int d, int c, size_t elemsize);
@@ -362,10 +362,10 @@ public:
     ~CudaMat();
     void release();
     // tensors with 1-4 dimensions Copy to NVIDIA
-    void create(int w, size_t elemsize);
-    void create(int w, int h, size_t elemsize);
-    void create(int w, int h, int c, size_t elemsize);
-    void create(int w, int h, int d, int c, size_t elemsize);
+    void create(int w, size_t elemsiz = 4);
+    void create(int w, int h, size_t elemsize = 4);
+    void create(int w, int h, int c, size_t elemsize = 4);
+    void create(int w, int h, int d, int c, size_t elemsize = 4);
     // Input a tensor and output a tensor of the same shape to GPU memory
     void create_like(const Mat& mat);
     void create_like(const CudaMat& cuda_mat);
@@ -376,7 +376,7 @@ public:
     CudaMat reshape(int w, int h, int d, int c) const;
 
     bool empty() const;
-    size_t total() const;
+    int total() const;
     void download(CudaMat& cpu_mat) const;
     void upload(const Mat& mat) const;
 
