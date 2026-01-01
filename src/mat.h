@@ -362,10 +362,10 @@ public:
     ~CudaMat();
     void release();
     // tensors with 1-4 dimensions Copy to NVIDIA
-    void create(int w, size_t elemsiz = 4);
-    void create(int w, int h, size_t elemsize = 4);
-    void create(int w, int h, int c, size_t elemsize = 4);
-    void create(int w, int h, int d, int c, size_t elemsize = 4);
+    void create(int w, size_t elemsiz = 4u);
+    void create(int w, int h, size_t elemsize = 4u);
+    void create(int w, int h, int c, size_t elemsize = 4u);
+    void create(int w, int h, int d, int c, size_t elemsize = 4u);
     // Input a tensor and output a tensor of the same shape to GPU memory
     void create_like(const Mat& mat);
     void create_like(const CudaMat& cuda_mat);
@@ -381,7 +381,7 @@ public:
     void upload(const Mat& mat) const;
 
     // Precision selection 4=float32/int32; 2 = float16; 1 = int8/uint8; 0 = empty
-    int elemsize;
+    size_t elemsize;
     // Data pointer in NVIDIA CUDA
     void* gpu_data;     // gpu指针数据
     int w;              // 宽度
