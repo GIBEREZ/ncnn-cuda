@@ -299,6 +299,8 @@ public:
 
     std::vector<record> delayed_records;
 
+    uint64_t pending_dispatch_total;
+
 #if NCNN_BENCHMARK
     uint32_t query_count;
     VkQueryPool query_pool;
@@ -311,6 +313,8 @@ VkComputePrivate::VkComputePrivate(const VulkanDevice* _vkdev)
     compute_command_pool = 0;
     compute_command_buffer = 0;
     compute_command_fence = 0;
+
+    pending_dispatch_total = 0;
 
 #if NCNN_BENCHMARK
     query_count = 0;
@@ -1687,6 +1691,8 @@ void VkCompute::record_pipeline(const Pipeline* pipeline, const std::vector<VkMa
             r.dispatch.group_count_z = group_count_z;
             d->delayed_records.push_back(r);
         }
+
+        d->pending_dispatch_total += group_count_x * group_count_y * group_count_z;
     }
 }
 
@@ -2134,6 +2140,8 @@ int VkCompute::submit_and_wait()
 
     d->delayed_records.clear();
 
+    d->pending_dispatch_total = 0;
+
     return 0;
 }
 
@@ -2177,6 +2185,8 @@ int VkCompute::reset()
 
     d->delayed_records.clear();
 
+    d->pending_dispatch_total = 0;
+
     // reset command buffer and fence
     {
         VkResult ret = vkResetCommandBuffer(d->compute_command_buffer, 0);
@@ -2206,6 +2216,11 @@ int VkCompute::reset()
     }
 
     return 0;
+}
+
+uint64_t VkCompute::pending_dispatch_total() const
+{
+    return d->pending_dispatch_total;
 }
 
 #if NCNN_BENCHMARK
@@ -2407,6 +2422,8 @@ public:
 
     const VulkanDevice* vkdev;
 
+    uint64_t pending_upload_total;
+
     VkCommandPool compute_command_pool;
     VkCommandPool transfer_command_pool;
 
@@ -2424,6 +2441,8 @@ public:
 VkTransferPrivate::VkTransferPrivate(const VulkanDevice* _vkdev)
     : vkdev(_vkdev)
 {
+    pending_upload_total = 0;
+
     compute_command_pool = 0;
     transfer_command_pool = 0;
 
@@ -2687,6 +2706,8 @@ void VkTransfer::record_upload(const Mat& src, VkMat& dst, const Option& opt, bo
     {
         return;
     }
+
+    d->pending_upload_total += dst.total() * dst.elemsize;
 
     if (dst.allocator->mappable)
     {
@@ -2962,7 +2983,63 @@ int VkTransfer::submit_and_wait()
         }
     }
 
+    d->pending_upload_total = 0;
+
     return 0;
+}
+
+int VkTransfer::reset()
+{
+    d->upload_staging_buffers.clear();
+
+    d->pending_upload_total = 0;
+
+    // reset command buffer and fence
+    {
+        VkResult ret = vkResetCommandBuffer(d->compute_command_buffer, 0);
+        if (ret != VK_SUCCESS)
+        {
+            NCNN_LOGE("vkResetCommandBuffer failed %d", ret);
+            return -1;
+        }
+    }
+    {
+        VkResult ret = vkResetFences(vkdev->vkdevice(), 1, &d->compute_command_fence);
+        if (ret != VK_SUCCESS)
+        {
+            NCNN_LOGE("vkResetFences failed %d", ret);
+            return -1;
+        }
+    }
+
+    if (!vkdev->info.unified_compute_transfer_queue())
+    {
+        {
+            VkResult ret = vkResetCommandBuffer(d->upload_command_buffer, 0);
+            if (ret != VK_SUCCESS)
+            {
+                NCNN_LOGE("vkResetCommandBuffer failed %d", ret);
+                return -1;
+            }
+        }
+        {
+            VkResult ret = vkResetFences(vkdev->vkdevice(), 1, &d->upload_command_fence);
+            if (ret != VK_SUCCESS)
+            {
+                NCNN_LOGE("vkResetFences failed %d", ret);
+                return -1;
+            }
+        }
+    }
+
+    d->begin_command_buffer();
+
+    return 0;
+}
+
+uint64_t VkTransfer::pending_upload_total() const
+{
+    return d->pending_upload_total;
 }
 
 } // namespace ncnn

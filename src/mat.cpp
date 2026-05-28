@@ -159,6 +159,8 @@ Mat Mat::reshape(int _w, int _h, int _c, Allocator* _allocator) const
     {
         // flatten and then align
         Mat tmp = reshape(_w * _h * _c, _allocator);
+        if (tmp.empty())
+            return tmp;
         return tmp.reshape(_w, _h, _c, _allocator);
     }
 
@@ -204,6 +206,8 @@ Mat Mat::reshape(int _w, int _h, int _d, int _c, Allocator* _allocator) const
     {
         // flatten and then align
         Mat tmp = reshape(_w * _h * _d * _c, _allocator);
+        if (tmp.empty())
+            return tmp;
         return tmp.reshape(_w, _h, _d, _c, _allocator);
     }
 
