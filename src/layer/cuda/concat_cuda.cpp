@@ -158,7 +158,6 @@ namespace ncnn {
 
             top_blob.dims = dims;
 
-            #pragma omp parallel for num_threads(opt.num_threads)
             float* outptr_base = static_cast<float*>(top_blob.gpu_data);
             for (int q = 0; q < channels; q++)
             {

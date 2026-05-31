@@ -7,6 +7,39 @@ endif()
 add_library(ncnntestutil STATIC testutil.cpp)
 target_link_libraries(ncnntestutil PUBLIC ncnn)
 
+# CUDA backend support for test infrastructure
+if(NCNN_CUDA)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+    set(CMAKE_CUDA_STANDARD 17)
+    set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+    # ===== 自动查找 CUDA/cuDNN 库（无需硬编码绝对路径）===== #
+    find_library(CUDNN_LIBRARY cudnn
+            HINTS $ENV{CUDA_PATH}/lib/x64
+            $ENV{CUDA_TOOLKIT_ROOT_DIR}/lib/x64)
+    find_library(CUDART_LIBRARY cudart
+            HINTS $ENV{CUDA_PATH}/lib/x64
+            $ENV{CUDA_TOOLKIT_ROOT_DIR}/lib/x64)
+    find_library(CUBLAS_LIBRARY cublas
+            HINTS $ENV{CUDA_PATH}/lib/x64
+            $ENV{CUDA_TOOLKIT_ROOT_DIR}/lib/x64)
+    find_library(CUBLASLT_LIBRARY cublasLt
+            HINTS $ENV{CUDA_PATH}/lib/x64
+            $ENV{CUDA_TOOLKIT_ROOT_DIR}/lib/x64)
+
+    # 链接 ncnn 库（CUDA 支持版本）
+    # ncnn_cuda_lib 已包含所有 CUDA kernel 编译产物，直接引用即可
+    target_link_libraries(ncnntestutil PRIVATE
+            ncnn_cuda_lib
+            ${CUDNN_LIBRARY}
+            ${CUDART_LIBRARY}
+            ${CUBLAS_LIBRARY}
+            ${CUBLASLT_LIBRARY}
+    )
+endif()
+
 macro(ncnn_add_test name)
     add_executable(test_${name} test_${name}.cpp)
     target_link_libraries(test_${name} PRIVATE ncnntestutil ncnn)
@@ -32,10 +65,10 @@ macro(ncnn_add_layer_test class)
                         ncnntestutil
                         ncnn
                         ncnn_cuda_lib
-                        "D:/software/CUDAv12.9/lib/x64/cudart.lib"
-                        "D:/software/CUDAv12.9/lib/x64/cublas.lib"
-                        "D:/software/CUDAv12.9/lib/x64/cublasLt.lib"
-                        "D:/software/CUDAv12.9/lib/x64/cudnn.lib"
+                        ${CUDART_LIBRARY}
+                        ${CUBLAS_LIBRARY}
+                        ${CUBLASLT_LIBRARY}
+                        ${CUDNN_LIBRARY}
                 )
             else ()
                 target_link_libraries(${test_filename} PRIVATE ncnntestutil ncnn)

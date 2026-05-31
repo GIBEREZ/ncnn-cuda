@@ -13,6 +13,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if NCNN_CUDA
+#include <cuda_runtime_api.h>
+#include <cuda/absval_cuda.h>
+#endif
+
 #if NCNN_VULKAN
 #include "command.h"
 #include "gpu.h"
@@ -1279,6 +1284,38 @@ int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn:
     }
 #endif // NCNN_VULKAN
 
+#if NCNN_CUDA
+    // cuda
+    if (!(flag & TEST_LAYER_DISABLE_CUDA_TESTING))
+    {
+        ncnn::Option opt = _opt;
+        opt.use_cuda = true;
+
+        std::vector<ncnn::Mat> d;
+        int ret = test_layer_cuda(typeindex, pd, weights, opt, a, top_blob_count, d, std::vector<ncnn::Mat>(), flag);
+        if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
+        {
+            fprintf(stderr, "test_layer_cuda failed\n");
+            return -1;
+        }
+    }
+
+    // cuda shape hint
+    if (!(flag & TEST_LAYER_DISABLE_CUDA_TESTING))
+    {
+        ncnn::Option opt = _opt;
+        opt.use_cuda = true;
+
+        std::vector<ncnn::Mat> d;
+        int ret = test_layer_cuda(typeindex, pd, weights, opt, a, top_blob_count, d, b, flag);
+        if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
+        {
+            fprintf(stderr, "test_layer_cuda failed with shape hint\n");
+            return -1;
+        }
+    }
+#endif // NCNN_CUDA
+
     return 0;
 }
 
@@ -1444,26 +1481,137 @@ int test_layer_cpu(int typeindex, const ncnn::ParamDict& pd, const std::vector<n
 }
 
 #if NCNN_CUDA
-int test_layer_cuda(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::CudaMat>& weights, const ncnn::Option& _opt, const ncnn::CudaMat& input_blob, ncnn::CudaMat& output_blob, void (*func)(ncnn::Layer*), int flag)
+int test_layer_cuda(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::Mat>& weights, const ncnn::Option& _opt, const std::vector<ncnn::Mat>& a, int top_blob_count, std::vector<ncnn::Mat>& d, const std::vector<ncnn::Mat>& top_shapes, int flag)
 {
     ncnn::Layer* op = ncnn::create_layer_cuda(typeindex);
+    if (!op)
+    {
+        return 233;
+    }
+
+    NCNN_LOGE("[CUDA test] typeindex=%d  inputs=%zu  outputs=%d\n", typeindex, a.size(), top_blob_count);
+    for (size_t i = 0; i < a.size(); i++)
+        NCNN_LOGE("  input[%zu]: dims=%d (%d %d %d %d)\n", i, a[i].dims, a[i].w, a[i].h, a[i].d, a[i].c);
 
     op->load_param(pd);
+
+    ncnn::Option opt = _opt;
+    opt.use_cuda = true;
+
+    if (!top_shapes.empty())
+    {
+        op->bottom_shapes = a;
+        op->top_shapes = top_shapes;
+    }
+
+    if (op->one_blob_only && a.size() != 1)
+    {
+        NCNN_LOGE("layer with one_blob_only but consume multiple inputs\n");
+        delete op;
+        return -1;
+    }
+
+    // load_model expects CPU Mat, pass original CPU weights
     ncnn::ModelBinFromMatArray mb(weights.data());
     op->load_model(mb);
 
-    ncnn::Option opt;
-    opt.use_cuda = true;
+    // upload inputs: Mat → CudaMat
+    std::vector<ncnn::CudaMat> a_cuda;
+    a_cuda.reserve(a.size());
+    for (size_t i = 0; i < a.size(); i++)
+    {
+        a_cuda.emplace_back(a[i]);
+    }
 
+    // forward
+    std::vector<ncnn::CudaMat> d_cuda(top_blob_count);
     if (op->support_inplace)
     {
-        output_blob = input_blob;
-        op->forward_inplace(output_blob, opt);
+        d_cuda = a_cuda;
+        op->forward_inplace(d_cuda, opt);
     }
     else
     {
-        op->forward(input_blob, output_blob, opt);
+        op->forward(a_cuda, d_cuda, opt);
     }
+
+    // download outputs: CudaMat → Mat
+    d.resize(top_blob_count);
+    for (size_t i = 0; i < d_cuda.size(); i++)
+    {
+        // CudaMat shadows base Mat fields, must read CudaMat's own dims
+        int _dims = d_cuda[i].dims;
+        if (_dims == 1)      d[i].create(d_cuda[i].w, d_cuda[i].elemsize);
+        else if (_dims == 2) d[i].create(d_cuda[i].w, d_cuda[i].h, d_cuda[i].elemsize);
+        else if (_dims == 3) d[i].create(d_cuda[i].w, d_cuda[i].h, d_cuda[i].c, d_cuda[i].elemsize);
+        else if (_dims == 4) d[i].create(d_cuda[i].w, d_cuda[i].h, d_cuda[i].d, d_cuda[i].c, d_cuda[i].elemsize);
+        ncnn::cudaMemcpy(d[i].data, d_cuda[i].gpu_data,
+                   d[i].total() * d[i].elemsize,
+                   ncnn::cudaMemcpyDeviceToHost);
+    }
+
+    NCNN_LOGE("[CUDA test] forward done, output[0] dims=%d (%d %d %d %d)  first_val=%.4f\n",
+            d[0].dims, d[0].w, d[0].h, d[0].d, d[0].c,
+            d[0].empty() ? -999.f : ((float*)d[0].data)[0]);
+
+    delete op;
+    return 0;
+}
+
+int test_layer_cuda(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::Mat>& weights, const ncnn::Option& _opt, const ncnn::Mat& a, ncnn::Mat& d, const ncnn::Mat& top_shape, int flag)
+{
+    ncnn::Layer* op = ncnn::create_layer_cuda(typeindex);
+    if (!op)
+    {
+        return 233;
+    }
+
+    NCNN_LOGE("[CUDA test] typeindex=%d  input: dims=%d (%d %d %d %d)",
+            typeindex, a.dims, a.w, a.h, a.d, a.c);
+
+    op->load_param(pd);
+
+    ncnn::Option opt = _opt;
+    opt.use_cuda = true;
+    if (top_shape.dims)
+    {
+        op->bottom_shapes.resize(1);
+        op->top_shapes.resize(1);
+        op->bottom_shapes[0] = a;
+        op->top_shapes[0] = top_shape;
+    }
+    // load_model expects CPU Mat, pass original CPU weights
+    ncnn::ModelBinFromMatArray mb(weights.data());
+    op->load_model(mb);
+    // upload input: Mat → CudaMat
+    ncnn::CudaMat a_cuda(a);
+    // forward
+    ncnn::CudaMat d_cuda;
+    if (op->support_inplace)
+    {
+        d_cuda = a_cuda;
+        op->forward_inplace(d_cuda, opt);
+    }
+    else
+    {
+        op->forward(a_cuda, d_cuda, opt);
+    }
+    // download output: CudaMat → Mat
+    // CudaMat shadows base Mat fields, must read CudaMat's own dims
+    {
+        int _dims = d_cuda.dims;
+        if (_dims == 1)      d.create(d_cuda.w, d_cuda.elemsize);
+        else if (_dims == 2) d.create(d_cuda.w, d_cuda.h, d_cuda.elemsize);
+        else if (_dims == 3) d.create(d_cuda.w, d_cuda.h, d_cuda.c, d_cuda.elemsize);
+        else if (_dims == 4) d.create(d_cuda.w, d_cuda.h, d_cuda.d, d_cuda.c, d_cuda.elemsize);
+    }
+    ncnn::cudaMemcpy(d.data, d_cuda.gpu_data,
+               d.total() * d.elemsize,
+               ncnn::cudaMemcpyDeviceToHost);
+
+    NCNN_LOGE("[CUDA test] forward done, output dims=%d (%d %d %d %d)  first_val=%.4f",
+            d.dims, d.w, d.h, d.d, d.c,
+            d.empty() ? -999.f : ((float*)d.data)[0]);
 
     delete op;
     return 0;
@@ -1861,6 +2009,38 @@ int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn:
     }
 #endif // NCNN_VULKAN
 
+#if NCNN_CUDA
+    // cuda
+    if (!(flag & TEST_LAYER_DISABLE_CUDA_TESTING))
+    {
+        ncnn::Option opt = _opt;
+        opt.use_cuda = true;
+
+        ncnn::Mat d;
+        int ret = test_layer_cuda(typeindex, pd, weights, opt, a, d, ncnn::Mat(), flag);
+        if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
+        {
+            NCNN_LOGE("test error!test_layer_cuda failed");
+            return -1;
+        }
+    }
+
+    // cuda shape hint
+    if (!(flag & TEST_LAYER_DISABLE_CUDA_TESTING))
+    {
+        ncnn::Option opt = _opt;
+        opt.use_cuda = true;
+
+        ncnn::Mat d;
+        int ret = test_layer_cuda(typeindex, pd, weights, opt, a, d, b, flag);
+        if (ret != 233 && (ret != 0 || CompareMat(b, d, epsilon) != 0))
+        {
+            NCNN_LOGE("test error!test_layer_cuda failed with shape hint");
+            return -1;
+        }
+    }
+#endif // NCNN_CUDA
+
     return 0;
 }
 
@@ -2107,13 +2287,6 @@ int test_layer(const char* layer_type, const ncnn::ParamDict& pd, const std::vec
 
     return 0;
 }
-
-#if NCNN_CUDA
-int test_layer(int typeindex, const ncnn::ParamDict& pd, const std::vector<ncnn::CudaMat>& weights, const ncnn::Option& _opt, const ncnn::CudaMat& a, float epsilon, void (*func)(ncnn::Layer*), int flag)
-{
-
-}
-#endif
 
 class TestOOMAllocator : public ncnn::UnlockedPoolAllocator
 {

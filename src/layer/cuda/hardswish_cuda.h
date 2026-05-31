@@ -1,26 +1,27 @@
 //
-// Created by GIBEREZ on 2025/11/15.
+// HardSwish CUDA header
 //
 
-#ifndef NCNN_SOFTMAX_H
-#define NCNN_SOFTMAX_H
+#ifndef NCNN_HARDSWISH_CUDA_H
+#define NCNN_HARDSWISH_CUDA_H
 #include "layer.h"
 
 namespace ncnn {
-int softmax_cuda(const CudaMat& input_blob, CudaMat& output_blob, int axis);
-int softmax_cuda_inplace(CudaMat& input_blob, int axis);
-    class Softmax_cuda : public Layer
+int hardswish_cuda(const CudaMat& input_blob, CudaMat& output_blob, float alpha, float beta);
+int hardswish_cuda_inplace(CudaMat& input_blob, float alpha, float beta);
+    class HardSwish_cuda : public Layer
     {
     public:
-        Softmax_cuda();
+        HardSwish_cuda();
         int load_param(const ParamDict& pd) override;
         using Layer::forward;
         int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const override;
         using Layer::forward_inplace;
         int forward_inplace(CudaMat& input_blob, const Option& opt) const override;
     public:
-        int axis;
+        float alpha;
+        float beta;
     };
 }
 
-#endif //NCNN_SOFTMAX_H
+#endif //NCNN_HARDSWISH_CUDA_H

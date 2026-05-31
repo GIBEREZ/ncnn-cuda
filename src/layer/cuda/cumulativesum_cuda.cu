@@ -109,15 +109,6 @@ namespace ncnn {
         }
     }
 
-    __global__ void cumulativesum_channel_inplace_kernel(float* input, int C, size_t total, size_t Numer)
-    {
-        unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        if (idx >= Numer)
-            return;
-        int channel = idx / total;
-        input[]
-    }
-
     int cumulativesum_cuda_inplace(CudaMat& input_blob, int axis)
     {
         int dims = input_blob.dims;
@@ -131,7 +122,7 @@ namespace ncnn {
             cub::DeviceScan::InclusiveSum(
                 d_temp_storage,
                 temp_storage_bytes,
-                input_blob.gpu_data,
+                static_cast<float*>(input_blob.gpu_data),
                 input_blob.total()
                 );
 
@@ -140,7 +131,7 @@ namespace ncnn {
             cub::DeviceScan::InclusiveSum(
                 d_temp_storage,
                 temp_storage_bytes,
-                input_blob.gpu_data,
+                static_cast<float*>(input_blob.gpu_data),
                 input_blob.total()
                 );
 

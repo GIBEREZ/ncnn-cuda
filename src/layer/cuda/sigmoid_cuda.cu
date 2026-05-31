@@ -1,48 +1,66 @@
-//
+// Sigmoid CUDA kernel: f(x) = 1 / (1 + exp(-x))
 // Created by GIBEREZ on 2025/12/26.
-//
+
 #include "sigmoid_cuda.h"
 
 namespace ncnn {
-    __global__ void Sigmoid_kernel(float* x, int N) {
-        if (const unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N)
-        {
-            x[idx] = 1.0f / (1.0f + expf(-x[idx]));
+
+__global__ void sigmoid_kernel_cuda(const float* input, float* output, int number)
+{
+    unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int idxElement = idx * 4;
+    if (idxElement + 3 < number) {
+        float4 vec_in = *(const float4*)&input[idxElement];
+        float4 vec_out;
+        vec_out.x = 1.0f / (1.0f + expf(-vec_in.x));
+        vec_out.y = 1.0f / (1.0f + expf(-vec_in.y));
+        vec_out.z = 1.0f / (1.0f + expf(-vec_in.z));
+        vec_out.w = 1.0f / (1.0f + expf(-vec_in.w));
+        *(float4*)&output[idxElement] = vec_out;
+    } else {
+        for (int i = 0; i < 4; i++) {
+            unsigned int elem_idx = idxElement + i;
+            if (elem_idx < number) {
+                float val = input[elem_idx];
+                output[elem_idx] = 1.0f / (1.0f + expf(-val));
+            }
         }
     }
+}
 
-    __global__ void Sigmoid_float4_kernel(float* x, int N) {
-        const unsigned int idx = (blockDim.x * blockIdx.x + threadIdx.x) * 4;
-        const unsigned int idxElement = idx * 4;
-        if (idx < N) {
-            float4 tmp_x = *reinterpret_cast<float4*>(&x[idxElement]);
-            float4 vec_out;
-            vec_out.x = 1.0f / (1.0f + expf(-tmp_x.x));
-            vec_out.y = 1.0f / (1.0f + expf(-tmp_x.y));
-            vec_out.z = 1.0f / (1.0f + expf(-tmp_x.z));
-            vec_out.w = 1.0f / (1.0f + expf(-tmp_x.w));
-            *reinterpret_cast<float4*>(&x[idxElement]) = vec_out;
-        }
-    }
-
-    int sigmoid_cuda_inplace(CudaMat& input_blob)
+int sigmoid_cuda(const CudaMat& input_blob, CudaMat& output_blob)
+{
+    int number = input_blob.total();
+    if (output_blob.empty())
     {
-        int total = input_blob.total();
-        int total4 = (total + 3) / 4;
-
-        int threads_per_block = 256;
-        int blocks_per_grid = (total4 + threads_per_block - 1) / threads_per_block;
-
-        Sigmoid_float4_kernel<<<blocks_per_grid, threads_per_block>>>(static_cast<float*>(input_blob.gpu_data), total);
-
-        cudaError_t err = cudaGetLastError();
-        if (err != cudaSuccess)
-        {
-            fprintf(stderr, "CUDA error in Sigmoid_kernel: %s\n", cudaGetErrorString(err));
-            return -1;
-        }
-
-        cudaDeviceSynchronize();
-        return 0;
+        output_blob.create_like(input_blob);
     }
+
+    int totalThreadsNeeded = (number + 3) / 4;
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (totalThreadsNeeded + threadsPerBlock - 1) / threadsPerBlock;
+
+    sigmoid_kernel_cuda<<<blocksPerGrid, threadsPerBlock>>>(
+        static_cast<const float*>(input_blob.gpu_data),
+        static_cast<float*>(output_blob.gpu_data),
+        number);
+
+    cudaDeviceSynchronize();
+    return 0;
+}
+
+int sigmoid_cuda_inplace(CudaMat& input_blob)
+{
+    int number = input_blob.total();
+    int totalThreadsNeeded = (number + 3) / 4;
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (totalThreadsNeeded + threadsPerBlock - 1) / threadsPerBlock;
+
+    float* gpu_data = static_cast<float*>(input_blob.gpu_data);
+    sigmoid_kernel_cuda<<<blocksPerGrid, threadsPerBlock>>>(gpu_data, gpu_data, number);
+
+    cudaDeviceSynchronize();
+    return 0;
+}
+
 } // namespace ncnn

@@ -15,6 +15,7 @@ namespace ncnn {
         int load_param(const ParamDict& pd) override;
         int load_model(const ModelBin& mb) override;
         int upload_model(const Option& opt) override;
+        using Layer::forward;
         int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const override;
         int Convolution_cuda_forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
 

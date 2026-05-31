@@ -1,18 +1,18 @@
 //
-// Created by GIBEREZ on 2025/12/26.
+// Mish CUDA header
 //
 
-#ifndef NCNN_SIGMOID_CUDA_H
-#define NCNN_SIGMOID_CUDA_H
+#ifndef NCNN_MISH_CUDA_H
+#define NCNN_MISH_CUDA_H
 #include "layer.h"
 
 namespace ncnn {
-int sigmoid_cuda(const CudaMat& input_blob, CudaMat& output_blob);
-int sigmoid_cuda_inplace(CudaMat& input_blob);
-    class Sigmoid_cuda : public Layer
+int mish_cuda(const CudaMat& input_blob, CudaMat& output_blob);
+int mish_cuda_inplace(CudaMat& input_blob);
+    class Mish_cuda : public Layer
     {
-        public:
-        Sigmoid_cuda();
+    public:
+        Mish_cuda();
         using Layer::forward;
         int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const override;
         using Layer::forward_inplace;
@@ -20,4 +20,4 @@ int sigmoid_cuda_inplace(CudaMat& input_blob);
     };
 }
 
-#endif //NCNN_SIGMOID_CUDA_H
+#endif //NCNN_MISH_CUDA_H

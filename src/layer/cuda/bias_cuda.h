@@ -14,6 +14,7 @@ namespace ncnn {
         Bias_cuda();
         int load_param(const ParamDict& pd) override;
         int load_model(const ModelBin& mb) override;
+        using Layer::forward_inplace;
         int forward_inplace(CudaMat& output_blob, const Option& opt) const override;
         int Bias_cuda_forward_inplace(CudaMat& input_blob) const;
     public:

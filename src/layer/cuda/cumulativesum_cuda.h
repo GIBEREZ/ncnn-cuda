@@ -8,11 +8,12 @@
 
 namespace ncnn {
 int cumulativesum_cuda_inplace(CudaMat& input_blob, int axis);
-    class CumulativeSum_cuda : Layer
+    class CumulativeSum_cuda : public Layer
     {
     public:
         CumulativeSum_cuda();
         int load_param(const ParamDict& pd) override;
+        using Layer::forward_inplace;
         int forward_inplace(CudaMat& input_blob, const Option& opt) const override;
     public:
         int axis;

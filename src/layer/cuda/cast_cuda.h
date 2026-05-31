@@ -12,6 +12,7 @@ namespace ncnn {
     public:
         Cast_cuda();
         virtual int load_param(const ParamDict& pd);
+        using Layer::forward;
         virtual int forward(const CudaMat& bottom_blob, CudaMat& top_blob, const Option& opt) const;
         int Cast_cuda_forward(const CudaMat& input_blob, CudaMat& output_blob) const;
     public:

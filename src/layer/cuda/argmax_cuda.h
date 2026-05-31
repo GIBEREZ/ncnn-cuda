@@ -13,6 +13,7 @@ namespace ncnn{
         ArgMax_cuda();
 
         int load_param(const ParamDict& pd) override;
+        using Layer::forward;
         int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const override;
         int argmax_cuda(const CudaMat& input_blob, CudaMat& output_blob) const;
     public:

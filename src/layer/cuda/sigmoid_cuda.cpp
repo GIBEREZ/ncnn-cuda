@@ -12,13 +12,23 @@ namespace ncnn {
         support_cuda = true;
     }
 
-    int Sigmoid_cuda::forward_inplace(CudaMat& input_blob, const Option& opt) const
+    int Sigmoid_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
         NCNN_LOGE("  *  Running CUDA Sigmoid forward");
+        sigmoid_cuda(input_blob, output_blob);
+        NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",output_blob.w,output_blob.h,output_blob.d,output_blob.c,output_blob.dims);
+        if (output_blob.empty() || output_blob.gpu_data == nullptr) NCNN_LOGE("  *  output blob gpu_data == nullptr");
+        NCNN_LOGE("  *  CUDA Sigmoid forward done");
+        return 0;
+    }
+
+    int Sigmoid_cuda::forward_inplace(CudaMat& input_blob, const Option& opt) const
+    {
+        NCNN_LOGE("  *  Running CUDA Sigmoid forward_inplace");
         sigmoid_cuda_inplace(input_blob);
         NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",input_blob.w,input_blob.h,input_blob.d,input_blob.c,input_blob.dims);
         if (input_blob.empty() || input_blob.gpu_data == nullptr) NCNN_LOGE("  *  output blob gpu_data == nullptr");
-        NCNN_LOGE("  *  CUDA Sigmoid forward done");
+        NCNN_LOGE("  *  CUDA Sigmoid forward_inplace done");
         return 0;
     }
 

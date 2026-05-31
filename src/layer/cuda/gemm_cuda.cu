@@ -59,7 +59,7 @@ namespace ncnn {
         int broadcast_type_C = -1;
         if (constantC && constant_broadcast_type_C != -1)
         {
-            // 浅拷贝该矩阵
+            // shallow copy
             C = model_C;
             broadcast_type_C = constant_broadcast_type_C;
         }

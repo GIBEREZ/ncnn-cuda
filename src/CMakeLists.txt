@@ -396,10 +396,36 @@ if(NCNN_CUDA)
         list(APPEND ncnn_SRCS_CUDA "command.cu")
         list(APPEND ncnn_SRCS_CUDA "layer/cuda/system.cu")
         add_library(ncnn_cuda_lib STATIC ${ncnn_SRCS_CUDA})
+        target_compile_options(ncnn_cuda_lib PRIVATE
+            $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CXX_COMPILER_ID:MSVC>>:-Xcompiler=/utf-8 -Xcompiler=/Zc:preprocessor>
+            $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/utf-8 /Zc:preprocessor>
+        )
+
+        # Set default SM architectures based on CUDA major version
+        # CUDA 11.x supports up to SM 86
+        # CUDA 12.x supports SM 89 (Ada), 90 (Hopper)
+        # CUDA 13.x supports SM 100 (Blackwell)
+        if(CUDAToolkit_VERSION VERSION_GREATER_EQUAL 13.0)
+            # CUDA 13.x (Ada + Hopper + Lovelace + Ampere)
+            set(NCNN_CUDA_ARCH_DEFAULT "75;80;86;89;90")
+        elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL 12.0)
+            # CUDA 12.x
+            set(NCNN_CUDA_ARCH_DEFAULT "75;80;86;89")
+        elseif(CUDAToolkit_VERSION VERSION_GREATER_EQUAL 11.0)
+            # CUDA 11.x
+            set(NCNN_CUDA_ARCH_DEFAULT "70;75;80;86")
+        else()
+            # Fallback for unknown/older CUDA: use native (compile for build machine's GPU)
+            set(NCNN_CUDA_ARCH_DEFAULT "native")
+            message(WARNING "Unknown CUDA version ${NCNN_CUDA_VERSION}, using CUDA_ARCHITECTURES=native")
+        endif()
+
+        set(NCNN_CUDA_ARCHITECTURES "${NCNN_CUDA_ARCH_DEFAULT}" CACHE STRING "CUDA SM architectures" FORCE)
+
         set_target_properties(ncnn_cuda_lib PROPERTIES
-                CUDA_SEPARABLE_COMPILATION ON
-                LINKER_LANGUAGE CXX
-                CUDA_ARCHITECTURES 50 60 75 80 85
+            CUDA_SEPARABLE_COMPILATION ON
+            LINKER_LANGUAGE CXX
+            CUDA_ARCHITECTURES "${NCNN_CUDA_ARCHITECTURES}"
         )
         target_include_directories(ncnn_cuda_lib
                 PUBLIC

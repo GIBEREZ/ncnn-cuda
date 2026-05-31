@@ -14,6 +14,7 @@ namespace ncnn {
         int load_param(const ParamDict& pd) override;
         int load_model(const ModelBin& mb) override;
 
+        using Layer::forward_inplace;
         int forward_inplace(CudaMat& input_blob, const Option& opt) const override;
 
         int batchnorm_precompute();

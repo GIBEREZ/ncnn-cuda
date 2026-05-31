@@ -47,42 +47,68 @@ namespace ncnn {
 
         int out_h = (input_blob.h + pad_top + pad_bottom - dilation_h * (kernel_h - 1) - 1) / stride_h + 1;
         int out_w = (input_blob.w + pad_left + pad_right - dilation_w * (kernel_w - 1) - 1) / stride_w + 1;
+        int in_cstep = (int)input_blob.cstep;
 
+        // Allocate output and set descriptors with ncnn cstep-aligned strides
         if (input_blob.dims == 1)
         {
             output_blob.create(out_w, input_blob.elemsize);
             cudnnSetTensor4dDescriptor(input_desc, CUDNN_TENSOR_NCHW,
                                        cudnn_dtype, 1, 1, 1, input_blob.w);
+            cudnnSetTensor4dDescriptor(output_desc, CUDNN_TENSOR_NCHW,
+                                       cudnn_dtype, 1, 1, 1, out_w);
         }
         else if (input_blob.dims == 2)
         {
             output_blob.create(out_w, out_h, input_blob.elemsize);
             cudnnSetTensor4dDescriptor(input_desc, CUDNN_TENSOR_NCHW,
                                        cudnn_dtype, 1, 1, input_blob.h, input_blob.w);
+            cudnnSetTensor4dDescriptor(output_desc, CUDNN_TENSOR_NCHW,
+                                       cudnn_dtype, 1, 1, out_h, out_w);
         }
         else if (input_blob.dims == 3)
         {
             output_blob.create(out_w, out_h, num_output, input_blob.elemsize);
-            cudnnSetTensor4dDescriptor(input_desc, CUDNN_TENSOR_NCHW,
-                                       cudnn_dtype, 1, input_blob.c, input_blob.h, input_blob.w);
+            int out_cstep = (int)output_blob.cstep;
+            // Input: use ncnn cstep stride
+            cudnnSetTensor4dDescriptorEx(input_desc, cudnn_dtype,
+                1, input_blob.c, input_blob.h, input_blob.w,
+                input_blob.c * in_cstep, in_cstep, input_blob.w, 1);
+            // Output: use ncnn cstep stride
+            cudnnSetTensor4dDescriptorEx(output_desc, cudnn_dtype,
+                1, num_output, out_h, out_w,
+                num_output * out_cstep, out_cstep, out_w, 1);
         }
         else if (input_blob.dims == 4)
         {
             output_blob.create(out_w, out_h, input_blob.d, num_output, input_blob.elemsize);
-            cudnnSetTensor4dDescriptor(input_desc, CUDNN_TENSOR_NCHW,
-                                       cudnn_dtype, input_blob.d, input_blob.c, input_blob.h, input_blob.w);
+            int out_cstep = (int)output_blob.cstep;
+            // Input: N=depth, use ncnn cstep stride
+            cudnnSetTensor4dDescriptorEx(input_desc, cudnn_dtype,
+                input_blob.d, input_blob.c, input_blob.h, input_blob.w,
+                input_blob.c * in_cstep, in_cstep, input_blob.w, 1);
+            // Output: N=depth, use ncnn cstep stride
+            cudnnSetTensor4dDescriptorEx(output_desc, cudnn_dtype,
+                input_blob.d, num_output, out_h, out_w,
+                num_output * out_cstep, out_cstep, out_w, 1);
         }
         else
         {
             return -1;
         }
 
-        cudnnSetTensor4dDescriptor(output_desc,
-            CUDNN_TENSOR_NCHW, cudnn_dtype,
-            input_blob.d,
-            num_output,
-            out_h, out_w
-        );
+        // Set bias descriptor with ncnn stride (if bias exists)
+        if (bias_term == 1)
+        {
+            int bias_cstep = (int)bias_blob.cstep;
+            if (input_blob.dims <= 2)
+                cudnnSetTensor4dDescriptor(bias_desc, CUDNN_TENSOR_NCHW,
+                    cudnn_dtype, 1, num_output, 1, 1);
+            else
+                cudnnSetTensor4dDescriptorEx(bias_desc, cudnn_dtype,
+                    1, num_output, 1, 1,
+                    num_output * bias_cstep, bias_cstep, 1, 1);
+        }
 
         // 5. Set filter descriptor
         cudnnSetFilter4dDescriptor(filter_desc, cudnn_dtype,
@@ -132,12 +158,13 @@ namespace ncnn {
         // 10. Add bias if bias_term == 1
         if (bias_term == 1)
         {
+            float beta_bias = 1.0f;  // accumulate on top of conv output
             cudnnAddTensor(
                 handle,
                 &alpha,
                 bias_desc,
                 bias_blob.gpu_data,
-                &beta,
+                &beta_bias,
                 output_desc,
                 output_blob.gpu_data
             );

@@ -32,7 +32,9 @@ namespace ncnn {
         int binaryop_cuda(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs) const;
 
         int load_param(const ParamDict& pd) override;
+        using Layer::forward;
         int forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const override;
+        using Layer::forward_inplace;
         int forward_inplace(CudaMat& bottom_top_blob, const Option& opt) const override;
 
         int binary_op_broadcast(const CudaMat& input_blob, void* B, void* C, int A_number) const;

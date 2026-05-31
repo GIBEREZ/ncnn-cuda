@@ -12,8 +12,8 @@ void Concat_dims2_axis1(const CudaMat& input_blob, CudaMat& output_blob, int h, 
     {
     public:
         Concat_cuda();
-
         int load_param(const ParamDict& pd) override;
+        using Layer::forward;
         int forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const override;
 
     public:

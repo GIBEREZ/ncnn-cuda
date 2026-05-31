@@ -812,16 +812,31 @@ if(NCNN_CUDA)
     set(CMAKE_CUDA_STANDARD 17)
     set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
+    # ===== 自动查找 CUDA/cuDNN 库（无需硬编码绝对路径）===== #
+    find_library(CUDNN_LIBRARY cudnn
+        HINTS $ENV{CUDA_PATH}/lib/x64
+              $ENV{CUDA_TOOLKIT_ROOT_DIR}/lib/x64)
+    find_library(CUDART_LIBRARY cudart
+        HINTS $ENV{CUDA_PATH}/lib/x64
+              $ENV{CUDA_TOOLKIT_ROOT_DIR}/lib/x64)
+    find_library(CUBLAS_LIBRARY cublas
+        HINTS $ENV{CUDA_PATH}/lib/x64
+              $ENV{CUDA_TOOLKIT_ROOT_DIR}/lib/x64)
+    find_library(CUBLASLT_LIBRARY cublasLt
+        HINTS $ENV{CUDA_PATH}/lib/x64
+              $ENV{CUDA_TOOLKIT_ROOT_DIR}/lib/x64)
+
     # ===== 添加你的 main.cpp 可执行文件 =====
     add_executable(ncnn_cuda main.cpp)
-    # 链接 ncnn 库（CUDA 支持版本）（cudnn不能够被添加到ncnn_cuda_lib文件当中作为编译，需要单独作引用）
+    # 链接 ncnn 库（CUDA 支持版本）
+    # ncnn_cuda_lib 已包含所有 CUDA kernel 编译产物，直接引用即可
     target_link_libraries(ncnn_cuda PRIVATE
             ncnn
             ncnn_cuda_lib
-            "D:/software/CUDAv12.9/lib/x64/cudnn.lib"
-            "D:/software/CUDAv12.9/lib/x64/cudart.lib"
-            "D:/software/CUDAv12.9/lib/x64/cublas.lib"
-            "D:/software/CUDAv12.9/lib/x64/cublasLt.lib"
+            ${CUDNN_LIBRARY}
+            ${CUDART_LIBRARY}
+            ${CUBLAS_LIBRARY}
+            ${CUBLASLT_LIBRARY}
     )
     # 包含头文件目录（ncnn 的头文件路径）
     target_include_directories(ncnn_cuda PRIVATE

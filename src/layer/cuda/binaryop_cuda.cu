@@ -463,15 +463,15 @@ namespace ncnn {
         CudaMat& top_blob = top_blobs[0];
         if (outdims == 1)
         {
-            top_blob.create(outw, 4u);
+            top_blob.create(outw, size_t(4));
         }
         if (outdims == 2)
         {
-            top_blob.create(outw, outh, 4u);
+            top_blob.create(outw, outh, size_t(4));
         }
         if (outdims == 3)
         {
-            top_blob.create(outw, outh, outc, 4u);
+            top_blob.create(outw, outh, outc, size_t(4));
         }
         if (outdims == 4)
         {

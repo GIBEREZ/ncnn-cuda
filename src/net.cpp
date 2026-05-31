@@ -2055,6 +2055,8 @@ int Net::load_model(const DataReader& dr)
 #if NCNN_CUDA
     if (ret == 0 && opt.use_cuda)
     {
+    }
+#endif
 
 #if NCNN_VULKAN
     if (ret == 0 && opt.use_vulkan_compute && cmd_upload)

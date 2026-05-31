@@ -14,6 +14,7 @@ namespace ncnn {
         int load_param(const ParamDict& pd) override;
         int load_model(const ModelBin& mb) override;
 
+        using Layer::forward;
         int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const override;
         int forward(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const override;
         int gemm_cuda(const std::vector<CudaMat>& bottom_blobs, std::vector<CudaMat>& top_blobs, const Option& opt) const;

@@ -28,7 +28,7 @@ namespace ncnn {
         if (w == -233)
             ndim = 0;
 
-        shape_expr = pd.get(6, ""); // 默认空字符串
+        shape_expr = pd.get(6, ""); // default empty string
 
         if (!shape_expr.empty())
         {
@@ -60,75 +60,31 @@ namespace ncnn {
         int dims = input_blob.dims;
         int total = input_blob.w * input_blob.h * input_blob.d * input_blob.c;
 
+        // Resolve special values: 0 = keep original, -1 = infer from total
+        if (outw == 0)   outw = dims >= 1 ? input_blob.w : outw;
+        if (outh == 0)   outh = dims >= 2 ? input_blob.h : outh;
+        if (outd == 0)   outd = dims >= 4 ? input_blob.d : outd;
+        if (outc == 0)   outc = dims >= 3 ? input_blob.c : outc;
+        if (outw == -1)  outw = total / (std::max(outh, 1) * std::max(outd, 1) * std::max(outc, 1));
+        if (outh == -1)  outh = total / (std::max(outw, 1) * std::max(outd, 1) * std::max(outc, 1));
+        if (outd == -1)  outd = total / (std::max(outw, 1) * std::max(outh, 1) * std::max(outc, 1));
+        if (outc == -1)  outc = total / (std::max(outw, 1) * std::max(outh, 1) * std::max(outd, 1));
+
+        NCNN_LOGE("  *  reshape %d %d %d %d -> %d %d %d %d  ndim=%d",
+                  input_blob.w, input_blob.h, input_blob.d, input_blob.c,
+                  outw, outh, outd, outc, ndim);
+
+        // Reshape is metadata-only: create a view with new dims, same GPU data
         if (ndim == 1)
-        {
-            if (outw == 0) outw == input_blob.w;
-            if (outh == -1) outh == total;
-            if (dims == 1 && input_blob.w == outw)
-            {
-                output_blob.create(input_blob.w, input_blob.h, input_blob.d, input_blob.c, input_blob.elemsize);
-                cudaMemcpy(output_blob.gpu_data, input_blob.gpu_data,
-                           input_blob.total() * input_blob.elemsize,
-                           cudaMemcpyDeviceToDevice);
-            }
             output_blob = input_blob.reshape(outw);
-        }
         else if (ndim == 2)
-        {
-            if (outw == 0) outw == input_blob.w;
-            if (outh == 0) outh = input_blob.h;
-            if (outw == -1) outw = total / outh;
-            if (outh == -1) outh == total / outw;
-            if (dims == 2 && input_blob.h == outh)
-            {
-                output_blob.create(input_blob.w, input_blob.h, input_blob.d, input_blob.c, input_blob.elemsize);
-                cudaMemcpy(output_blob.gpu_data, input_blob.gpu_data,
-                           input_blob.total() * input_blob.elemsize,
-                           cudaMemcpyDeviceToDevice);
-            }
             output_blob = input_blob.reshape(outw, outh);
-        }
         else if (ndim == 3)
-        {
-            if (outw == 0) outw = input_blob.w;
-            if (outh == 0) outh = input_blob.h;
-            if (outc == 0) outc = input_blob.c;
-            if (outw == -1) outw = total / outc / outh;
-            if (outh == -1) outh = total / outc / outw;
-            if (outc == -1) outc = total / outh / outw;
-            if (dims == 3 && input_blob.c == outc)
-            {
-                output_blob.create(input_blob.w, input_blob.h, input_blob.d, input_blob.c, input_blob.elemsize);
-                cudaMemcpy(output_blob.gpu_data, input_blob.gpu_data,
-                           input_blob.total() * input_blob.elemsize,
-                           cudaMemcpyDeviceToDevice);
-                output_blob.w = outw;
-                output_blob.h = outh;
-            }
             output_blob = input_blob.reshape(outw, outh, outc);
-        }
         else if (ndim == 4)
-        {
-            if (outw == 0) outw = input_blob.w;
-            if (outh == 0) outh = input_blob.h;
-            if (outc == 0) outc = input_blob.c;
-            if (outd == 0) outd = input_blob.d;
-            if (outw == -1) outw = total / outc / outd / outh;
-            if (outh == -1) outh = total / outc / outd / outw;
-            if (outd == -1) outd = total / outc / outh / outw;
-            if (outc == -1) outc = total / outd / outh / outw;
-            if (dims == 4 && input_blob.c == outc)
-            {
-                output_blob.create(input_blob.w, input_blob.h, input_blob.d, input_blob.c, input_blob.elemsize);
-                cudaMemcpy(output_blob.gpu_data, input_blob.gpu_data,
-                           input_blob.total() * input_blob.elemsize,
-                           cudaMemcpyDeviceToDevice);
-                output_blob.w = outw;
-                output_blob.h = outh;
-                output_blob.d = outd;
-            }
             output_blob = input_blob.reshape(outw, outh, outd, outc);
-        }
+        else
+            output_blob = input_blob; // no-op
 
         NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",output_blob.w,output_blob.h,output_blob.d,output_blob.c,output_blob.dims);
         if (output_blob.empty() || output_blob.gpu_data == nullptr) NCNN_LOGE("  *  output blob gpu_data == nullptr");

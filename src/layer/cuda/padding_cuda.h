@@ -12,6 +12,7 @@ namespace ncnn {
     public:
         Padding_cuda();
         virtual int upload_model(const Option& opt);
+        using Layer::forward;
         virtual int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
     };
 }

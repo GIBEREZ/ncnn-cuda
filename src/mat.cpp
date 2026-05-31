@@ -996,13 +996,7 @@ bool CudaMat::empty() const
 
 int CudaMat::total() const
 {
-    if (dims <= 0) return 0;
-    size_t t = 1;
-    if (dims >= 1) t *= w;
-    if (dims >= 2) t *= h;
-    if (dims >= 3) t *= c;
-    if (dims >= 4) t *= d;
-    return t;
+    return (int)(cstep * c);
 }
 
 void CudaMat::download(CudaMat& cpu_mat) const

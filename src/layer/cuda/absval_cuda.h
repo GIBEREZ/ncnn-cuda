@@ -12,7 +12,7 @@ void absval_cuda_inplace(CudaMat& input_blob);
     {
         public:
         AbsVal_cuda();
-
+        using Layer::forward_inplace;
         int forward_inplace(CudaMat& input_blob, const Option& opt) const override;
     };
 }

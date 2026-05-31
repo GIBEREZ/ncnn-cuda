@@ -15,6 +15,7 @@ namespace ncnn
         InnerProduct_cuda();
         int load_param(const ParamDict& pd) override;
         int load_model(const ModelBin& mb) override;
+        using Layer::forward;
         int forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const override;
         int InnerProduct_cuda_forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const;
     public:
