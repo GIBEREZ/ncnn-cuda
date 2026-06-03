@@ -33,6 +33,7 @@ class ModelBinFromDataReaderPrivate;
 class NCNN_EXPORT ModelBinFromDataReader : public ModelBin
 {
 public:
+    using ModelBin::load;
     explicit ModelBinFromDataReader(const DataReader& dr);
     virtual ~ModelBinFromDataReader();
 
@@ -51,6 +52,7 @@ class NCNN_EXPORT ModelBinFromMatArray : public ModelBin
 {
 public:
     // construct from weight blob array
+    using ModelBin::load;
     explicit ModelBinFromMatArray(const Mat* weights);
     virtual ~ModelBinFromMatArray();
 
