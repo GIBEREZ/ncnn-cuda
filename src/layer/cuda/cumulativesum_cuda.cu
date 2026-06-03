@@ -5,107 +5,41 @@
 #include <cub/cub.cuh>
 
 namespace ncnn {
-    __global__ void ReducePartSum_kernel(const float* input, float* part_output, size_t Number)
+
+    /**
+     * @brief Generic cumulative sum kernel for all dim/axis combinations.
+     *
+     * For a tensor with axis = k:
+     *   - outer_size = product of dimensions before axis k
+     *   - ax_size    = dim[axis] (number of elements to cumulatively sum)
+     *   - inner_size = product of dimensions after axis k (= stride between consecutive axis elements)
+     *
+     * Each thread handles one independent cumulative sum segment (sequential scan).
+     *
+     * @param data        Pointer to GPU data array
+     * @param outer_size  Product of dimensions before the target axis
+     * @param ax_size     Size of the target axis (segment length)
+     * @param inner_size  Product of dimensions after the target axis (segment stride)
+     */
+    __global__ void cumulativesum_kernel(float* data, int outer_size, int ax_size, int inner_size)
     {
-        extern __shared__ float sum[];
-        int tid = threadIdx.x;
-        int lane = tid % warpSize;
-        int warpId = tid / warpSize;
+        int num_segments = outer_size * inner_size;
+        int seg_idx = blockIdx.x * blockDim.x + threadIdx.x;
+        if (seg_idx >= num_segments) return;
 
-        unsigned int idx = blockIdx.x * blockDim.x + tid;
-        unsigned int idxElement = idx * 4;
+        // Decompose segment index into outer/inner parts
+        int outer_idx = seg_idx / inner_size;
+        int inner_idx = seg_idx % inner_size;
 
-        float threadSum = 0.0f;
-        if (idxElement < Number) {
-            size_t remain = Number - idxElement;
-            float4 vec_in = make_float4(0, 0, 0, 0);
+        // Base pointer for this segment
+        float* base = data + outer_idx * ax_size * inner_size + inner_idx;
 
-            if (remain >= 4) {
-#if __CUDA_ARCH__ >= 350
-                vec_in = __ldg(reinterpret_cast<const float4*>(input + idxElement));
-#else
-                vec_in = *reinterpret_cast<const float4*>(input + idxElement);
-#endif
-            } else {
-                if (remain > 0) vec_in.x = input[idxElement];
-                if (remain > 1) vec_in.y = input[idxElement + 1];
-                if (remain > 2) vec_in.z = input[idxElement + 2];
-            }
-            threadSum = vec_in.x + vec_in.y + vec_in.z + vec_in.w;
-        }
-
-        #pragma unroll
-        for (int offset = warpSize/2; offset > 0; offset /= 2) {
-            threadSum += __shfl_down_sync(0xFFFFFFFF, threadSum, offset);
-        }
-
-        if (lane == 0) {
-            sum[warpId] = threadSum;
-        }
-        __syncthreads();
-
-        if (warpId == 0) {
-            float blockSum = (lane < (blockDim.x + warpSize - 1) / warpSize) ? sum[lane] : 0.0f;
-
-            #pragma unroll
-            for (int offset = warpSize/2; offset > 0; offset /= 2) {
-                blockSum += __shfl_down_sync(0xFFFFFFFF, blockSum, offset);
-            }
-
-            if (tid == 0) {
-                part_output[blockIdx.x] = blockSum;
-            }
-        }
-    }
-
-    __global__ void AddBlockPrefix_inplace_kernel(float* input, const float* part_output, size_t Number)
-    {
-
-        unsigned int idx = blockIdx.x * blockDim.x + threadIdx.x;
-        unsigned int idxElement = idx * 4;
-
-        if (idxElement >= Number)
-            return;
-
-        float base = (blockIdx.x == 0) ? 0.0f : part_output[blockIdx.x - 1];
-        size_t remain = Number - idxElement;
-        if (remain >= 4) {
-            float4 vec_in;
-
-            if ((reinterpret_cast<size_t>(input + idxElement) & 0xF) == 0) {
-                vec_in = *reinterpret_cast<const float4*>(input + idxElement);
-            } else {
-                vec_in.x = input[idxElement];
-                vec_in.y = input[idxElement + 1];
-                vec_in.z = input[idxElement + 2];
-                vec_in.w = input[idxElement + 3];
-            }
-
-            float4 vec_out;
-            vec_out.x = vec_in.x;
-            vec_out.y = vec_in.y + vec_out.x;
-            vec_out.z = vec_in.z + vec_out.y;
-            vec_out.w = vec_in.w + vec_out.z;
-
-            vec_out.x += base;
-            vec_out.y += base;
-            vec_out.z += base;
-            vec_out.w += base;
-
-            if ((reinterpret_cast<size_t>(input + idxElement) & 0xF) == 0) {
-                *reinterpret_cast<float4*>(input + idxElement) = vec_out;
-            } else {
-                input[idxElement] = vec_out.x;
-                input[idxElement + 1] = vec_out.y;
-                input[idxElement + 2] = vec_out.z;
-                input[idxElement + 3] = vec_out.w;
-            }
-        } else {
-            float partial_sum = 0.0f;
-            for (int i = 0; i < remain; i++) {
-                partial_sum += input[idxElement + i];
-                input[idxElement + i] = partial_sum + base;
-            }
+        // Sequential inclusive cumulative sum along the axis
+        float accum = 0.0f;
+        for (int i = 0; i < ax_size; i++)
+        {
+            accum += base[i * inner_size];
+            base[i * inner_size] = accum;
         }
     }
 
@@ -114,6 +48,10 @@ namespace ncnn {
         int dims = input_blob.dims;
         int positive_axis = axis < 0 ? dims + axis : axis;
 
+        float* data = static_cast<float*>(input_blob.gpu_data);
+        int threadsPerBlock = 256;
+
+        // ---- dims == 1: single 1D array, use efficient CUB scan ----
         if (dims == 1)
         {
             void* d_temp_storage = nullptr;
@@ -122,114 +60,120 @@ namespace ncnn {
             cub::DeviceScan::InclusiveSum(
                 d_temp_storage,
                 temp_storage_bytes,
-                static_cast<float*>(input_blob.gpu_data),
-                input_blob.total()
-                );
+                data,
+                input_blob.total());
 
             cudaMalloc(&d_temp_storage, temp_storage_bytes);
 
             cub::DeviceScan::InclusiveSum(
                 d_temp_storage,
                 temp_storage_bytes,
-                static_cast<float*>(input_blob.gpu_data),
-                input_blob.total()
-                );
+                data,
+                input_blob.total());
+
+            cudaFree(d_temp_storage);
 
             return 0;
         }
-        if (dims == 2 && positive_axis == 0)
-        {
-            int size = input_blob.w * input_blob.h;
 
-            int threadsPerBlock = 256;
-            int vec_size = 16 / input_blob.elemsize;
-            int totalThreadsNeeded = (size + vec_size - 1) / vec_size;
-            int blocksPerGrid = (totalThreadsNeeded + threadsPerBlock - 1) / threadsPerBlock;
-            float* part_output = nullptr;
-            cudaMalloc(&part_output, blocksPerGrid * sizeof(float));
-            int warpSize;
-            cudaDeviceGetAttribute(&warpSize, cudaDevAttrWarpSize, 0);
-            int warps_per_block = (threadsPerBlock + warpSize - 1) / warpSize;
-            size_t sharedBytes = warps_per_block * sizeof(float);
-            ReducePartSum_kernel<<<blocksPerGrid, threadsPerBlock, sharedBytes>>>(static_cast<float*>(input_blob.gpu_data), part_output, size);
-            cudaDeviceSynchronize();
+        // ---- Compute segment parameters from dims and axis ----
+        int outer_size = 1;
+        int ax_size = 1;
+        int inner_size = 1; // stride between consecutive axis elements
 
-            void* d_temp_storage = nullptr;
-            size_t temp_storage_bytes = 0;
-            cub::DeviceScan::InclusiveSum(
-                d_temp_storage,
-                temp_storage_bytes,
-                part_output,
-                part_output,
-                blocksPerGrid
-            );
-            cudaMalloc(&d_temp_storage, temp_storage_bytes);
-            cub::DeviceScan::InclusiveSum(
-                d_temp_storage,
-                temp_storage_bytes,
-                part_output,
-                part_output,
-                blocksPerGrid
-            );
-            cudaFree(d_temp_storage);
-            AddBlockPrefix_inplace_kernel<<<blocksPerGrid, threadsPerBlock>>>(static_cast<float*>(input_blob.gpu_data), part_output, size);
-            cudaDeviceSynchronize();
-        }
-        if (dims == 2 && positive_axis == 1)
+        if (dims == 2)
         {
             int w = input_blob.w;
             int h = input_blob.h;
 
-            cudaStream_t* streams = new cudaStream_t[h];
-            void** temp_storages = new void*[h];
-            size_t temp_storage_bytes = 0;
-
-            cub::DeviceScan::InclusiveSum(
-                nullptr,
-                temp_storage_bytes,
-                static_cast<float*>(nullptr),
-                static_cast<float*>(nullptr),
-                w
-            );
-
-            for (int i = 0; i < h; ++i) {
-                cudaStreamCreate(&streams[i]);
-                cudaMalloc(&temp_storages[i], temp_storage_bytes);
+            if (positive_axis == 0)
+            {
+                // sum over rows: per-column prefix sum (h elements, stride = w)
+                outer_size = 1;
+                ax_size = h;
+                inner_size = w;
             }
-
-            for (int i = 0; i < h; ++i) {
-                float* row_ptr = static_cast<float*>(input_blob.data) + i * w;
-
-                cub::DeviceScan::InclusiveSum(
-                    temp_storages[i],
-                    temp_storage_bytes,
-                    row_ptr,
-                    row_ptr,
-                    w,
-                    streams[i]
-                );
+            else // positive_axis == 1
+            {
+                // sum over columns: per-row prefix sum (w elements, contiguous stride = 1)
+                outer_size = h;
+                ax_size = w;
+                inner_size = 1;
             }
-
-            for (int i = 0; i < h; ++i) {
-                cudaStreamSynchronize(streams[i]);
-                cudaStreamDestroy(streams[i]);
-                cudaFree(temp_storages[i]);
-            }
-
-            delete[] streams;
-            delete[] temp_storages;
-            return 0;
         }
-        if (dims == 3 && positive_axis == 0)
+        else if (dims == 3)
         {
             int w = input_blob.w;
             int h = input_blob.h;
             int c = input_blob.c;
-            int size = w * h;
 
-
+            if (positive_axis == 0)
+            {
+                // sum over channels: per-position prefix sum (c elements, stride = h*w)
+                outer_size = 1;
+                ax_size = c;
+                inner_size = h * w;
+            }
+            else if (positive_axis == 1)
+            {
+                // sum over rows within each channel (h elements, stride = w)
+                outer_size = c;
+                ax_size = h;
+                inner_size = w;
+            }
+            else // positive_axis == 2
+            {
+                // sum over columns within each channel (w elements, contiguous stride = 1)
+                outer_size = c * h;
+                ax_size = w;
+                inner_size = 1;
+            }
         }
+        else if (dims == 4)
+        {
+            int w = input_blob.w;
+            int h = input_blob.h;
+            int d = input_blob.d;
+            int c = input_blob.c;
+
+            if (positive_axis == 0)
+            {
+                // sum over channels: per-position prefix sum (c elements, stride = d*h*w)
+                outer_size = 1;
+                ax_size = c;
+                inner_size = d * h * w;
+            }
+            else if (positive_axis == 1)
+            {
+                // sum over depth within each channel (d elements, stride = h*w)
+                outer_size = c;
+                ax_size = d;
+                inner_size = h * w;
+            }
+            else if (positive_axis == 2)
+            {
+                // sum over rows within each depth slice (h elements, stride = w)
+                outer_size = c * d;
+                ax_size = h;
+                inner_size = w;
+            }
+            else // positive_axis == 3
+            {
+                // sum over columns within each depth slice (w elements, contiguous stride = 1)
+                outer_size = c * d * h;
+                ax_size = w;
+                inner_size = 1;
+            }
+        }
+
+        int num_segments = outer_size * inner_size;
+        int blocksPerGrid = (num_segments + threadsPerBlock - 1) / threadsPerBlock;
+
+        cumulativesum_kernel<<<blocksPerGrid, threadsPerBlock>>>(
+            data, outer_size, ax_size, inner_size);
+        cudaDeviceSynchronize();
 
         return 0;
     }
-}
+
+} // namespace ncnn

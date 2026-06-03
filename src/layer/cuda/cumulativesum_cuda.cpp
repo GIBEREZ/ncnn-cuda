@@ -21,7 +21,7 @@ namespace ncnn {
 
     int CumulativeSum_cuda::forward_inplace(CudaMat& input_blob, const Option& opt) const
     {
-        NCNN_LOGE("  *  Running CUDA CumulativeSum forward");
+        NCNN_LOGE("  *  Running CUDA CumulativeSum forward  axis=%d", axis);
         cumulativesum_cuda_inplace(input_blob, axis);
         NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",input_blob.w,input_blob.h,input_blob.d,input_blob.c,input_blob.dims);
         if (input_blob.empty() || input_blob.gpu_data == nullptr) NCNN_LOGE("  *  output blob gpu_data == nullptr");

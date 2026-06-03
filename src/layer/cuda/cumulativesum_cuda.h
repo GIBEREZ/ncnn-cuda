@@ -20,4 +20,4 @@ int cumulativesum_cuda_inplace(CudaMat& input_blob, int axis);
     };
 }
 
-#endif //NCNN_CUMULATIVESUM_H
+#endif //NCNN_CUMULATIVESUM_CUDA_H
