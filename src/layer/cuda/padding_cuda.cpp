@@ -23,7 +23,7 @@ namespace ncnn{
         int h = input_blob.h;                   // input height
         int w = input_blob.w;                   // input width
         size_t elemsize = input_blob.elemsize;  // element size
-        int elempack = input_blob.elempack;     // element pack count
+        int elempack = 1;     // element pack count
 
         int outw = 0;
         int outh = 0;

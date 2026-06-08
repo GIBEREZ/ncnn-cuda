@@ -36,7 +36,7 @@ public:
     int forward_layer(int layer_index, std::vector<Mat>& blob_mats, const Option& opt) const;
 
 #if NCNN_CUDA
-    int forward_layer(int layer_index, std::vector<CudaMat>& blob_CudaMats, CudaCompute& CUDA, const Option& opt) const;
+    int forward_layer(int layer_index, std::vector<Mat>& blob_mats, std::vector<CudaMat>& blob_CudaMats, CudaCompute& CUDA, const Option& opt) const;
 #endif
 
 #if NCNN_VULKAN
@@ -197,7 +197,7 @@ int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, cons
 }
 
 #if NCNN_CUDA
-int NetPrivate::forward_layer(int layer_index, std::vector<CudaMat>& blob_CudaMats, CudaCompute& CUDA, const Option& opt) const
+int NetPrivate::forward_layer(int layer_index, std::vector<Mat>& blob_mats, std::vector<CudaMat>& blob_CudaMats, CudaCompute& CUDA, const Option& opt) const
 {
     int ret = 0;
 
@@ -208,21 +208,45 @@ int NetPrivate::forward_layer(int layer_index, std::vector<CudaMat>& blob_CudaMa
 
     for (int bottom_blob_index : layer->bottoms)
     {
-        if (blob_CudaMats[bottom_blob_index].dims == 0 && blob_CudaMats[bottom_blob_index].dims == 0)
+        if (blob_CudaMats[bottom_blob_index].dims == 0 && blob_mats[bottom_blob_index].dims == 0)
         {
-            int ret = forward_layer(blobs[bottom_blob_index].producer, blob_CudaMats, CUDA, opt);
+            int ret = forward_layer(blobs[bottom_blob_index].producer, blob_mats, blob_CudaMats, CUDA, opt);
             if (ret != 0)
                 return ret;
         }
         if (layer->support_cuda)
         {
+            // upload CPU->GPU if GPU buffer empty but CPU has data
+            if (blob_CudaMats[bottom_blob_index].dims == 0 && blob_mats[bottom_blob_index].dims != 0)
+            {
+                NCNN_LOGE("  *  upload blob[%d] CPU->GPU", bottom_blob_index);
+                blob_CudaMats[bottom_blob_index] = CudaMat(blob_mats[bottom_blob_index]);
+                if (opt.lightmode)
+                    blob_mats[bottom_blob_index].release();
+            }
+
             NCNN_LOGE("=== layer %d, layer_name=%s, support_cuda=%d ===", layer_index, layer->name.c_str(), layer->support_cuda);
             NCNN_LOGE(" -> forward_layer blob_CudaMat[%d] w=%d,h=%d,d=%d,c=%d,dims=%d",bottom_blob_index,blob_CudaMats[bottom_blob_index].w,blob_CudaMats[bottom_blob_index].h,blob_CudaMats[bottom_blob_index].d,blob_CudaMats[bottom_blob_index].c,blob_CudaMats[bottom_blob_index].dims);
             ret = do_forward_layer(layer, blob_CudaMats, opt);
         }
         else
         {
-            ret = do_forward_layer(layer, blob_CudaMats, opt);
+            // download GPU->CPU if CPU buffer empty but GPU has data
+            if (blob_CudaMats[bottom_blob_index].dims != 0 && blob_mats[bottom_blob_index].dims == 0)
+            {
+                NCNN_LOGE("  *  download blob[%d] GPU->CPU", bottom_blob_index);
+                CUDA.Download_Device(blob_CudaMats[bottom_blob_index], blob_mats[bottom_blob_index]);
+            }
+            ret = do_forward_layer(layer, blob_mats, opt);
+            // Upload result back to GPU for downstream layers
+            if (ret == 0)
+            {
+                for (size_t j = 0; j < layer->tops.size(); j++)
+                {
+                    int top_blob_index = layer->tops[j];
+                    blob_CudaMats[top_blob_index] = CudaMat(blob_mats[top_blob_index]);
+                }
+            }
         }
     }
 
@@ -3016,7 +3040,7 @@ int Extractor::extract(int blob_index, CudaMat& feat, CudaCompute& CUDA)
     if (d->blob_Cudamats[blob_index].dims == 0)
     {
         int layer_index = d->net->blobs()[blob_index].producer;
-        d->net->d->forward_layer(layer_index, d->blob_Cudamats, CUDA, d->opt);
+        d->net->d->forward_layer(layer_index, d->blob_mats, d->blob_Cudamats, CUDA, d->opt);
     }
 
     feat = d->blob_Cudamats[blob_index];

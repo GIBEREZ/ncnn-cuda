@@ -96,27 +96,28 @@ namespace ncnn {
     {
         if (src.empty()) return;
         size_t bytes = src.total() * src.elemsize;
-        cudaMemcpy(dst.data, src.data, bytes, cudaMemcpyHostToDevice);
+        cudaMemcpy(dst.gpu_data, src.data, bytes, cudaMemcpyHostToDevice);
     }
 
     void CudaCompute::Download_Device(const CudaMat& src, Mat& dst)
     {
         if (src.empty() || src.gpu_data == nullptr)
+        {
             NCNN_LOGE("download device is null");
+            return;
+        }
+
         dst.create_like(src);
-        float* data = (float*)malloc(src.total() * src.elemsize);
-        cudaError_t err = cudaMemcpy(data, src.gpu_data, src.alloc_bytes, cudaMemcpyDeviceToHost);
+        if (dst.empty())
+            return;
+
+        size_t bytes = src.total() * src.elemsize;
+        cudaError_t err = cudaMemcpy(dst.data, src.gpu_data, bytes, cudaMemcpyDeviceToHost);
         if (err != cudaSuccess)
         {
-            NCNN_LOGE("===CudaCompute::Download_Device()=== cudaMemcpy cudaMemcpyDeviceToHost failed: %s", cudaGetErrorString(err));
+            NCNN_LOGE("===CudaCompute::Download_Device()=== cudaMemcpy DeviceToHost failed: %s", cudaGetErrorString(err));
         }
         cudaDeviceSynchronize();
-        NCNN_LOGE("Host data (after copy back):");
-        for (int i = 0; i < src.w; i++)
-        {
-            fprintf(stderr, "%.1f ", data[i]);
-        }
-        fprintf(stderr, "\n");
     }
 }
 

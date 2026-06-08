@@ -518,6 +518,49 @@ void Mat::create_like(const Mat& m, Allocator* _allocator)
 }
 
 #if NCNN_CUDA
+void Mat::create_like(const CudaMat& m, Allocator* _allocator)
+{
+    int _dims = m.dims;
+    if (_dims == 1)
+        create(m.w, m.elemsize, 1, _allocator);
+    if (_dims == 2)
+        create(m.w, m.h, m.elemsize, 1, _allocator);
+    if (_dims == 3)
+        create(m.w, m.h, m.c, m.elemsize, 1, _allocator);
+    if (_dims == 4)
+        create(m.w, m.h, m.d, m.c, m.elemsize, 1, _allocator);
+}
+#endif
+
+#if NCNN_VULKAN
+void Mat::create_like(const VkMat& m, Allocator* _allocator)
+{
+    int _dims = m.dims;
+    if (_dims == 1)
+        create(m.w, m.elemsize, m.elempack, _allocator);
+    if (_dims == 2)
+        create(m.w, m.h, m.elemsize, m.elempack, _allocator);
+    if (_dims == 3)
+        create(m.w, m.h, m.c, m.elemsize, m.elempack, _allocator);
+    if (_dims == 4)
+        create(m.w, m.h, m.d, m.c, m.elemsize, m.elempack, _allocator);
+}
+
+void Mat::create_like(const VkImageMat& im, Allocator* _allocator)
+{
+    int _dims = im.dims;
+    if (_dims == 1)
+        create(im.w, im.elemsize, im.elempack, _allocator);
+    if (_dims == 2)
+        create(im.w, im.h, im.elemsize, im.elempack, _allocator);
+    if (_dims == 3)
+        create(im.w, im.h, im.c, im.elemsize, im.elempack, _allocator);
+    if (_dims == 4)
+        create(im.w, im.h, im.d, im.c, im.elemsize, im.elempack, _allocator);
+}
+#endif // NCNN_VULKAN
+
+#if NCNN_CUDA
 
 CudaMat::CudaMat() :
     elemsize(0), gpu_data(nullptr), w(0), h(0), d(0), c(0), dims(0), cstep(0), alloc_bytes(0), refcount(nullptr)
@@ -999,48 +1042,7 @@ int CudaMat::total() const
     return (int)(cstep * c);
 }
 
-void CudaMat::download(CudaMat& cpu_mat) const
-{
-    // 1. 执行 GPU → CPU 拷贝
-    cudaMemcpy(cpu_mat.data, gpu_data, total() * elemsize, cudaMemcpyDeviceToHost);
-    // 2. （可选）同步，确保 GPU 操作完成
-    cudaDeviceSynchronize();
-}
-
-void CudaMat::upload(const Mat& mat) const
-{
-
-}
-
 #endif
-
-#if NCNN_VULKAN
-void Mat::create_like(const VkMat& m, Allocator* _allocator)
-{
-    int _dims = m.dims;
-    if (_dims == 1)
-        create(m.w, m.elemsize, m.elempack, _allocator);
-    if (_dims == 2)
-        create(m.w, m.h, m.elemsize, m.elempack, _allocator);
-    if (_dims == 3)
-        create(m.w, m.h, m.c, m.elemsize, m.elempack, _allocator);
-    if (_dims == 4)
-        create(m.w, m.h, m.d, m.c, m.elemsize, m.elempack, _allocator);
-}
-
-void Mat::create_like(const VkImageMat& im, Allocator* _allocator)
-{
-    int _dims = im.dims;
-    if (_dims == 1)
-        create(im.w, im.elemsize, im.elempack, _allocator);
-    if (_dims == 2)
-        create(im.w, im.h, im.elemsize, im.elempack, _allocator);
-    if (_dims == 3)
-        create(im.w, im.h, im.c, im.elemsize, im.elempack, _allocator);
-    if (_dims == 4)
-        create(im.w, im.h, im.d, im.c, im.elemsize, im.elempack, _allocator);
-}
-#endif // NCNN_VULKAN
 
 #if NCNN_VULKAN
 void VkMat::create(int _w, size_t _elemsize, VkAllocator* _allocator)

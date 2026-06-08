@@ -3,84 +3,87 @@
 //
 
 #if NCNN_CUDA
-    #include <iostream>
-    #include <vector>
+    #include <cstdio>
+    #include <cmath>
     #include "net.h"
-    #include <cuda_runtime_api.h>
-    #include <chrono>
-    #include <command.h>
+    #include "command.h"
 
     int main() {
         ncnn::get_device_properties();
-        ncnn::get_CUDA_device_deviceInfo();
 
-        return 0;
+        // 构造输入 Mat: 3 通道 32x32
+        ncnn::Mat input(32, 32, 3);
+        input.fill(0.01f);
 
-        ncnn::Net net;
+        // ==============================
+        // CUDA 推理
+        // ==============================
+        ncnn::Net net_cuda;
+        net_cuda.opt.use_cuda = true;
 
-        ncnn::Option option;
-        option.use_cuda = true;
+        int ret = net_cuda.load_param("D:/software/Projects/PythonProjects/torch/model.ncnn.param");
+        if (ret != 0) { fprintf(stderr, "CUDA: Failed to load param\n"); return -1; }
+        ret = net_cuda.load_model("D:/software/Projects/PythonProjects/torch/model.ncnn.bin");
+        if (ret != 0) { fprintf(stderr, "CUDA: Failed to load model\n"); return -1; }
 
-        ncnn::Net embed_net_;
-        ncnn::Net encoder_net_;
-        ncnn::Net decoder_net_;
-
-        embed_net_.opt = option;
-        encoder_net_.opt = option;
-        decoder_net_.opt = option;
-
-        int ret = encoder_net_.load_param("D:/software/Model/deepseek_r1_decoder.ncnn.param");
-        if (ret != 0)
+        ncnn::Mat output_cuda;
         {
-            printf("Failed to load param file\n");
-            return -1;
+            ncnn::Extractor ex = net_cuda.create_extractor();
+            ex.input("in0", input);
+            ex.extract("out0", output_cuda);
         }
 
-        ret = encoder_net_.load_model("D:/software/Model/deepseek_r1_decoder.ncnn.bin.00");
-        if (ret != 0)
+        NCNN_LOGE("=== CUDA output: total=%zu dims=%d w=%d ===",
+                  output_cuda.total(), output_cuda.dims, output_cuda.w);
+
+        // ==============================
+        // CPU 参考推理
+        // ==============================
+        ncnn::Net net_cpu;
+        net_cpu.opt.use_cuda = false;
+
+        ret = net_cpu.load_param("D:/software/Projects/PythonProjects/torch/model.ncnn.param");
+        if (ret != 0) { fprintf(stderr, "CPU: Failed to load param\n"); return -1; }
+        ret = net_cpu.load_model("D:/software/Projects/PythonProjects/torch/model.ncnn.bin");
+        if (ret != 0) { fprintf(stderr, "CPU: Failed to load model\n"); return -1; }
+
+        ncnn::Mat output_cpu;
         {
-            printf("Failed to load model file\n");
-            return -1;
+            ncnn::Extractor ex = net_cpu.create_extractor();
+            ex.input("in0", input);
+            ex.extract("out0", output_cpu);
         }
 
-        const int width = 32;
-        const int height = 32;
-        const int channels = 3;
+        NCNN_LOGE("=== CPU  output: total=%zu dims=%d w=%d ===",
+                  output_cpu.total(), output_cpu.dims, output_cpu.w);
 
-        std::srand((unsigned int)std::time(nullptr));
-
-        std::vector<unsigned char> image_data(width * height * channels);
-        for (auto& pixel : image_data)
+        // ==============================
+        // 对比
+        // ==============================
+        NCNN_LOGE("--- i  |  CUDA        CPU         diff");
+        bool all_match = true;
+        int count = output_cuda.w;
+        if (output_cpu.dims == output_cuda.dims && output_cpu.w == output_cuda.w)
         {
-            pixel = static_cast<unsigned char>(std::rand() % 256);
+            const float* p_cuda = (const float*)output_cuda.data;
+            const float* p_cpu  = (const float*)output_cpu.data;
+            for (int i = 0; i < count; i++)
+            {
+                float diff = fabsf(p_cuda[i] - p_cpu[i]);
+                if (diff > 0.001f) all_match = false;
+                NCNN_LOGE("  %3d  |  %+.6f  %+.6f  %s%.6f",
+                          i, p_cuda[i], p_cpu[i],
+                          diff > 0.001f ? "*** " : "    ", diff);
+            }
+        }
+        else
+        {
+            NCNN_LOGE("  dimension mismatch! CUDA dims=%d w=%d  CPU dims=%d w=%d",
+                      output_cuda.dims, output_cuda.w, output_cpu.dims, output_cpu.w);
+            all_match = false;
         }
 
-        ncnn::Mat A = ncnn::Mat::from_pixels_resize(
-            image_data.data(),
-            ncnn::Mat::PIXEL_RGB,
-            width, height,
-            32, 32
-        );
-
-        ncnn::CudaMat input(A);
-        ncnn::Mat output;
-
-        input.substract_mean_normalize(nullptr, nullptr);
-
-        ncnn::Extractor extractor = net.create_extractor();
-
-        extractor.input("in0", input);
-
-        return 0;
-
-        extractor.extract("out0", output);
-
-
-        for (int i = 0; i < output.total(); i++)
-        {
-            NCNN_LOGE("%.6f ", output[i]);
-        }
-
+        NCNN_LOGE("=== %s ===", all_match ? "ALL MATCH" : "MISMATCH DETECTED");
         return 0;
     }
 #endif

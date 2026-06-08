@@ -41,6 +41,10 @@
 
 namespace ncnn {
 
+#if NCNN_CUDA
+class CudaMat;
+#endif
+
 #if NCNN_VULKAN
 class VkMat;
 class VkImageMat;
@@ -163,6 +167,10 @@ public:
     void create(int w, int h, int d, int c, size_t elemsize, int elempack, Allocator* allocator = 0);
     // allocate like
     void create_like(const Mat& m, Allocator* allocator = 0);
+#if NCNN_CUDA
+    // allocate like
+    void create_like(const CudaMat& m, Allocator* allocator = 0);
+#endif
 #if NCNN_VULKAN
     // allocate like
     void create_like(const VkMat& m, Allocator* allocator = 0);
@@ -337,13 +345,13 @@ public:
 
 #if NCNN_CUDA
 #include "cuda_runtime_api.h"
-class NCNN_EXPORT CudaMat : public Mat
+class NCNN_EXPORT CudaMat
 {
 public:
     // empty
     CudaMat();
     // Accept tensors with 1-4 dimensions
-    CudaMat(int w, size_t elemsize );
+    CudaMat(int w, size_t elemsize);
     CudaMat(int w, int h, size_t elemsize);
     CudaMat(int w, int h, int c, size_t elemsize);
     CudaMat(int w, int h, int d, int c, size_t elemsize);
@@ -377,8 +385,6 @@ public:
 
     bool empty() const;
     int total() const;
-    void download(CudaMat& cpu_mat) const;
-    void upload(const Mat& mat) const;
 
     // Precision selection 4=float32/int32; 2 = float16; 1 = int8/uint8; 0 = empty
     size_t elemsize;

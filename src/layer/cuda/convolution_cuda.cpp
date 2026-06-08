@@ -68,10 +68,21 @@ namespace ncnn {
 
     int Convolution_cuda::forward(const CudaMat& input_blob, CudaMat& output_blob, const Option& opt) const
     {
-        NCNN_LOGE("  *  Running CUDA Convolution forward");
-        Convolution_cuda_forward(input_blob, output_blob, opt);
-        NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",output_blob.w,output_blob.h,output_blob.d,output_blob.c,output_blob.dims);
-        if (output_blob.empty() || output_blob.gpu_data == nullptr) NCNN_LOGE("  *  output blob gpu_data == nullptr");
+        NCNN_LOGE("  *  Running CUDA Convolution forward  num_output=%d  kernel=%dx%d  stride=%dx%d  dilation=%dx%d  pad=%d,%d,%d,%d",
+                  num_output, kernel_w, kernel_h, stride_w, stride_h,
+                  dilation_w, dilation_h, pad_left, pad_right, pad_top, pad_bottom);
+
+        int ret = Convolution_cuda_forward(input_blob, output_blob, opt);
+        if (ret != 0)
+        {
+            NCNN_LOGE("  *  CUDA Convolution forward FAILED ret=%d", ret);
+            return ret;
+        }
+
+        NCNN_LOGE("  *  forward output_blob w=%d,h=%d,d=%d,c=%d,dims=%d",
+                  output_blob.w, output_blob.h, output_blob.d, output_blob.c, output_blob.dims);
+        if (output_blob.empty() || output_blob.gpu_data == nullptr)
+            NCNN_LOGE("  *  output blob gpu_data == nullptr");
         NCNN_LOGE("  *  CUDA Convolution forward done");
         return 0;
     }
